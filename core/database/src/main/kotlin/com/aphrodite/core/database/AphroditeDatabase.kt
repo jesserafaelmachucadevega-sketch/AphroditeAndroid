@@ -13,6 +13,8 @@ import com.aphrodite.core.database.dao.PresetDao
 import com.aphrodite.core.database.dao.SessionDao
 import com.aphrodite.core.database.dao.TaskDao
 import com.aphrodite.core.database.dao.UploadDao
+import com.aphrodite.core.database.dao.UserDao
+import com.aphrodite.core.database.entity.AuthSessionEntity
 import com.aphrodite.core.database.entity.CalendarAccountEntity
 import com.aphrodite.core.database.entity.CalendarEntity
 import com.aphrodite.core.database.entity.CalendarEventEntity
@@ -30,6 +32,7 @@ import com.aphrodite.core.database.entity.SessionEntity
 import com.aphrodite.core.database.entity.TaskEntity
 import com.aphrodite.core.database.entity.TaskRunEntity
 import com.aphrodite.core.database.entity.UploadEntity
+import com.aphrodite.core.database.entity.UserProfileEntity
 
 /** The local store. Every user-visible record lives here; nothing is server-owned. */
 @Database(
@@ -51,6 +54,8 @@ import com.aphrodite.core.database.entity.UploadEntity
         CalendarEntity::class,
         CalendarEventEntity::class,
         ContactEntity::class,
+        UserProfileEntity::class,
+        AuthSessionEntity::class,
     ],
     version = 1,
     exportSchema = true,
@@ -67,6 +72,7 @@ abstract class AphroditeDatabase : RoomDatabase() {
     abstract fun taskDao(): TaskDao
     abstract fun calendarDao(): CalendarDao
     abstract fun contactDao(): ContactDao
+    abstract fun userDao(): UserDao
 
     companion object {
         const val NAME = "aphrodite.db"

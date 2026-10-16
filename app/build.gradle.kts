@@ -29,7 +29,10 @@ dependencies {
     implementation(project(":core:designsystem"))
     implementation(project(":core:adaptive"))
     implementation(project(":core:datastore"))
+    implementation(project(":core:database"))
+    implementation(project(":core:security"))
 
+    implementation(project(":feature:auth"))
     implementation(project(":feature:settings"))
 
     implementation(platform(libs.compose.bom))
@@ -37,6 +40,7 @@ dependencies {
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
+    implementation(libs.androidx.fragment)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.splashscreen)
     implementation(libs.androidx.navigation.compose)

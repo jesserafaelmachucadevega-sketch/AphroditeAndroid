@@ -19,16 +19,24 @@ import com.aphrodite.designsystem.theme.BackgroundPattern
 import com.aphrodite.designsystem.theme.LocalAphroditeColors
 import com.aphrodite.designsystem.theme.LocalAphroditeThemeSpec
 import com.aphrodite.designsystem.theme.resolveThemeId
+import com.aphrodite.feature.auth.AuthScreen
+import com.aphrodite.feature.auth.AuthStage
+import com.aphrodite.feature.auth.AuthViewModel
 
 /**
  * The application root.
  *
- * Resolves the theme and the layout profile from stored preferences, then hosts the navigation
- * graph over the theme's ambient background.
+ * Resolves the theme and the layout profile from stored preferences, draws the ambient
+ * background, and shows either the sign-in surface or the main shell depending on whether a
+ * local profile is unlocked.
  */
 @Composable
-fun AphroditeApp(viewModel: AppViewModel = hiltViewModel()) {
+fun AphroditeApp(
+    viewModel: AppViewModel = hiltViewModel(),
+    authViewModel: AuthViewModel = hiltViewModel(),
+) {
     val preferences by viewModel.state.collectAsStateWithLifecycle()
+    val authState by authViewModel.state.collectAsStateWithLifecycle()
 
     AphroditeTheme(
         themeId = resolveThemeId(preferences.themeId, preferences.followSystemTheme),
@@ -37,7 +45,20 @@ fun AphroditeApp(viewModel: AppViewModel = hiltViewModel()) {
     ) {
         AphroditeAdaptiveProvider(mode = preferences.layoutMode) {
             RootBackground(preferences) {
-                AphroditeNavHost(viewModel = viewModel)
+                if (authState.stage == AuthStage.Unlocked) {
+                    AphroditeNavHost(viewModel = viewModel)
+                } else {
+                    AuthScreen(
+                        state = authState,
+                        onUsernameChange = authViewModel::onUsernameChange,
+                        onDisplayNameChange = authViewModel::onDisplayNameChange,
+                        onPasswordChange = authViewModel::onPasswordChange,
+                        onConfirmPasswordChange = authViewModel::onConfirmPasswordChange,
+                        onTotpCodeChange = authViewModel::onTotpCodeChange,
+                        onTogglePassword = authViewModel::togglePasswordVisibility,
+                        onSubmit = authViewModel::submit,
+                    )
+                }
             }
         }
     }
