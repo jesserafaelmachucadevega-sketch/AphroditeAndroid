@@ -28,6 +28,9 @@ dependencies {
     implementation(project(":core:common"))
     implementation(project(":core:designsystem"))
     implementation(project(":core:adaptive"))
+    implementation(project(":core:datastore"))
+
+    implementation(project(":feature:settings"))
 
     implementation(platform(libs.compose.bom))
     androidTestImplementation(platform(libs.compose.bom))
