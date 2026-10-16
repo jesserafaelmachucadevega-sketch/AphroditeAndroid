@@ -9,10 +9,22 @@ database is local, mail and calendar talk to your providers directly, web search
 providers you configure, and models run either on your device, on a machine on your LAN, or in
 the cloud.
 
+## Install
+
+Grab the latest APK from the [releases page](../../releases/latest) and sideload it. Builds are
+debug-signed, so Android will warn about an unknown source — expected for a development build.
+
+- Package: `com.aphrodite.debug`
+- Minimum: Android 8.0 (API 26)
+- Versioning: previews step up by a hundredth (0.01, 0.02, ...), the finished app is 1.0, and
+  after that normal semantic versioning applies
+
 ## Status
 
-Under active construction. The foundation is in place — the Gradle build, all 32 modules, the
-design system, and the adaptive shell — and the feature set is being filled in phase by phase.
+Under active construction. What exists and what does not is described in each release's notes;
+the short version is that the foundation is complete — the build, all 32 modules, the design
+system, the adaptive shell, the local database, credentials and the provider layer — and the
+feature screens are being filled in on top of it.
 
 ## Requirements
 
