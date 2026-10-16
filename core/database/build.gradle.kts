@@ -1,6 +1,7 @@
 plugins {
     id("aphrodite.android.library")
     id("aphrodite.android.room")
+    id("aphrodite.android.hilt")
 }
 
 android {
@@ -13,4 +14,5 @@ dependencies {
     api(project(":core:common"))
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.datetime)
+    implementation(libs.compose.runtime)
 }

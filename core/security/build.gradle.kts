@@ -1,5 +1,6 @@
 plugins {
     id("aphrodite.android.library")
+    id("aphrodite.android.hilt")
 }
 
 android {
@@ -14,5 +15,6 @@ dependencies {
 
     implementation(libs.androidx.biometric)
     implementation(libs.androidx.appcompat)
+    implementation(libs.androidx.fragment)
     implementation(libs.kotlinx.serialization.json)
 }
