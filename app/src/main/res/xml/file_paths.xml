@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <files-path
+        name="aphrodite_files"
+        path="." />
+    <cache-path
+        name="aphrodite_cache"
+        path="." />
+    <external-files-path
+        name="aphrodite_external"
+        path="." />
+</paths>

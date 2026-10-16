@@ -1,0 +1,23 @@
+*.iml
+.gradle
+/local.properties
+/.idea
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+.kotlin
+**/build/
+*.hprof
+*.apk
+*.aab
+*.keystore
+!debug.keystore
+
+# Stray workspace directory created by the editor session, not part of the project.
+/untitled-project/
+
+# Editor/agent session state, not project source.
+/.commandcode/

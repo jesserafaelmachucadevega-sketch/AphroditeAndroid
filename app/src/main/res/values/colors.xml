@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="aphrodite_bg">#FF282C34</color>
+    <color name="aphrodite_panel">#FF111111</color>
+    <color name="aphrodite_accent">#FFE06C75</color>
+    <color name="aphrodite_fg">#FF9CDEF2</color>
+</resources>
