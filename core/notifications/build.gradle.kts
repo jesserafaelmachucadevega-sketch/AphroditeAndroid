@@ -1,6 +1,6 @@
 plugins {
     id("aphrodite.android.library")
-    id("aphrodite.android.hilt")
+    id("aphrodite.android.hilt.worker")
 }
 
 android {
@@ -13,6 +13,5 @@ dependencies {
     api(project(":core:common"))
     api(project(":core:designsystem"))
 
-    api(libs.androidx.work.runtime)
     implementation(libs.androidx.core.ktx)
 }
