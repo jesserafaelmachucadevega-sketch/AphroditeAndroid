@@ -11,6 +11,18 @@ minSdk = "26"
 targetSdk = "37"
 compileSdk = "37"
 
+# App identity.
+#
+# Versioning scheme: this is a work-in-progress preview, so it steps up by a
+# hundredth on every published build (0.01, 0.02, ...). The finished, complete
+# app is 1.0, and everything after that follows normal semantic versioning.
+#
+# appVersionCode is what Android actually compares to decide whether an install
+# is an upgrade, so it must increase on every build even when the visible name
+# is revised. Keep the two in step: code N ships as the Nth published build.
+appVersionName = "0.01"
+appVersionCode = "1"
+
 # AndroidX / Compose
 composeBom = "2026.09.00"
 composeAdaptive = "1.3.0"

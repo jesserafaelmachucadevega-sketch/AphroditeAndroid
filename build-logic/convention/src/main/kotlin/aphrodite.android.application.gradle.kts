@@ -1,5 +1,6 @@
 import com.aphrodite.buildlogic.catalog
 import com.aphrodite.buildlogic.versionInt
+import com.aphrodite.buildlogic.versionString
 import com.android.build.api.dsl.ApplicationExtension
 import org.gradle.kotlin.dsl.configure
 
@@ -15,8 +16,8 @@ extensions.configure<ApplicationExtension> {
         applicationId = "com.aphrodite"
         minSdk = catalog.versionInt("minSdk")
         targetSdk = catalog.versionInt("targetSdk")
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = catalog.versionInt("appVersionCode")
+        versionName = catalog.versionString("appVersionName")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
     }
