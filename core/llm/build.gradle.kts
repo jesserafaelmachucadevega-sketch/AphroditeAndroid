@@ -1,5 +1,6 @@
 plugins {
     id("aphrodite.android.library")
+    id("aphrodite.android.hilt")
 }
 
 android {
