@@ -33,6 +33,7 @@ dependencies {
     implementation(project(":core:security"))
 
     implementation(project(":feature:auth"))
+    implementation(project(":feature:chat"))
     implementation(project(":feature:settings"))
 
     implementation(platform(libs.compose.bom))

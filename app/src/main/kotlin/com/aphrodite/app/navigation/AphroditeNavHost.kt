@@ -10,6 +10,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -26,13 +27,23 @@ import com.aphrodite.designsystem.theme.AphroditeThemes
 import com.aphrodite.feature.settings.AppearanceHandlers
 import com.aphrodite.feature.settings.AppearanceState
 import com.aphrodite.feature.settings.BuildInfo
+import com.aphrodite.feature.chat.ChatScreen
+import com.aphrodite.feature.chat.ChatViewModel
 import com.aphrodite.feature.settings.SettingsCategory
 import com.aphrodite.feature.settings.SettingsScreen
+import com.aphrodite.feature.settings.SettingsViewModel
+import com.aphrodite.feature.settings.ServicesHandlers
 
 /** Hosts the navigation graph inside the adaptive shell. */
 @Composable
-fun AphroditeNavHost(viewModel: AppViewModel) {
+fun AphroditeNavHost(
+    viewModel: AppViewModel,
+    chatViewModel: ChatViewModel = hiltViewModel(),
+    settingsViewModel: SettingsViewModel = hiltViewModel(),
+) {
     val preferences by viewModel.state.collectAsStateWithLifecycle()
+    val chatState by chatViewModel.state.collectAsStateWithLifecycle()
+    val servicesState by settingsViewModel.services.collectAsStateWithLifecycle()
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route ?: Routes.SETTINGS
@@ -66,9 +77,22 @@ fun AphroditeNavHost(viewModel: AppViewModel) {
     ) {
         NavHost(
             navController = navController,
-            startDestination = Routes.SETTINGS,
+            startDestination = Routes.CHAT,
             modifier = Modifier.fillMaxSize(),
         ) {
+            composable(Routes.CHAT) {
+                ChatScreen(
+                    state = chatState,
+                    onSelectSession = chatViewModel::selectSession,
+                    onNewSession = chatViewModel::newSession,
+                    onDeleteSession = chatViewModel::deleteSession,
+                    onSearchChange = chatViewModel::onSearchChange,
+                    onInputChange = chatViewModel::onInputChange,
+                    onSend = chatViewModel::send,
+                    onStop = chatViewModel::stopStreaming,
+                    onDismissError = chatViewModel::dismissError,
+                )
+            }
             composable(Routes.SETTINGS) {
                 SettingsScreen(
                     state = preferences.toAppearanceState(),
@@ -77,6 +101,8 @@ fun AphroditeNavHost(viewModel: AppViewModel) {
                     selected = settingsCategory,
                     onSelect = { settingsCategory = it },
                     buildInfo = buildInfo,
+                    servicesState = servicesState,
+                    servicesHandlers = settingsViewModel.toServicesHandlers(),
                 )
             }
             composable(Routes.THEMES) {
@@ -103,7 +129,22 @@ fun AphroditeNavHost(viewModel: AppViewModel) {
     }
 }
 
+/** Wires the providers panel's callbacks to its view model. */
+private fun SettingsViewModel.toServicesHandlers(): ServicesHandlers = ServicesHandlers(
+    onStartAdd = ::startAdd,
+    onStartEdit = ::startEdit,
+    onDraftChange = ::onDraftChange,
+    onCancelEdit = ::cancelEdit,
+    onSave = ::save,
+    onDelete = ::delete,
+    onToggleEnabled = ::toggleEnabled,
+    onRefreshModels = ::refreshModels,
+    onSelectModels = ::selectModels,
+    onToggleFavourite = ::toggleFavourite,
+)
+
 private fun titleFor(route: String): String = when (route) {
+    Routes.CHAT -> "Chats"
     Routes.SETTINGS -> "Settings"
     Routes.THEMES -> "Themes"
     Routes.ADMIN -> "Admin"

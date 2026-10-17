@@ -42,6 +42,13 @@ object Sections {
 
 val aphroditeDestinations: List<AphroditeDestination> = listOf(
     AphroditeDestination(
+        route = Routes.CHAT,
+        label = "Chats",
+        icon = AphroditeIcons.Chat,
+        section = Sections.CHATS,
+        inBottomBar = true,
+    ),
+    AphroditeDestination(
         route = Routes.SETTINGS,
         label = "Settings",
         icon = AphroditeIcons.Settings,
