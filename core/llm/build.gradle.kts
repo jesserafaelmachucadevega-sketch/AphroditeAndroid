@@ -14,6 +14,7 @@ dependencies {
     api(project(":core:network"))
     api(project(":core:database"))
     api(project(":core:datastore"))
+    api(project(":core:security"))
 
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.datetime)

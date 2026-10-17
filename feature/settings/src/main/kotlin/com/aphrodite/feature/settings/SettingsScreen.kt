@@ -24,6 +24,7 @@ import com.aphrodite.designsystem.components.AphroditeButton
 import com.aphrodite.designsystem.components.AphroditeButtonStyle
 import com.aphrodite.designsystem.components.AphroditeCard
 import com.aphrodite.designsystem.components.AphroditeDivider
+import com.aphrodite.designsystem.components.AphroditeEmptyState
 import com.aphrodite.designsystem.components.AphroditeKeyValueRow
 import com.aphrodite.designsystem.components.AphroditeSectionHeader
 import com.aphrodite.designsystem.icons.AphroditeIcons
@@ -38,6 +39,7 @@ enum class SettingsCategory(
     val icon: ImageVector,
     val group: String,
 ) {
+    Services("services", "Providers", AphroditeIcons.Server, "Models"),
     Appearance("appearance", "Appearance", AphroditeIcons.Palette, "Interface"),
     About("about", "About", AphroditeIcons.Info, "System"),
 }
@@ -68,6 +70,8 @@ fun SettingsScreen(
     onSelect: (SettingsCategory) -> Unit,
     buildInfo: BuildInfo,
     modifier: Modifier = Modifier,
+    servicesState: ServicesState = ServicesState(),
+    servicesHandlers: ServicesHandlers? = null,
 ) {
     val profile = com.aphrodite.core.adaptive.LocalDeviceProfile.current
     val twoPane = profile.supportsTwoPanes
@@ -88,7 +92,7 @@ fun SettingsScreen(
                     .background(aphroditeColors.border),
             )
             Box(modifier = Modifier.weight(1f)) {
-                SettingsPanel(selected, state, handlers, themes, buildInfo)
+                SettingsPanel(selected, state, handlers, themes, buildInfo, servicesState, servicesHandlers)
             }
         }
     } else {
@@ -98,6 +102,8 @@ fun SettingsScreen(
             handlers = handlers,
             themes = themes,
             buildInfo = buildInfo,
+            servicesState = servicesState,
+            servicesHandlers = servicesHandlers,
             showCategoryPicker = true,
             onSelect = onSelect,
         )
@@ -147,6 +153,8 @@ private fun SettingsPanel(
     handlers: AppearanceHandlers,
     themes: List<AphroditeThemeSpec>,
     buildInfo: BuildInfo,
+    servicesState: ServicesState,
+    servicesHandlers: ServicesHandlers?,
     showCategoryPicker: Boolean = false,
     onSelect: (SettingsCategory) -> Unit = {},
 ) {
@@ -174,6 +182,17 @@ private fun SettingsPanel(
 
         Box(modifier = Modifier.weight(1f)) {
             when (category) {
+                SettingsCategory.Services ->
+                    if (servicesHandlers != null) {
+                        ServicesSettingsPanel(state = servicesState, handlers = servicesHandlers)
+                    } else {
+                        AphroditeEmptyState(
+                            title = "Providers unavailable",
+                            description = "The model layer did not initialise.",
+                            icon = AphroditeIcons.Server,
+                        )
+                    }
+
                 SettingsCategory.Appearance -> AppearanceSettingsPanel(
                     state = state,
                     handlers = handlers,
