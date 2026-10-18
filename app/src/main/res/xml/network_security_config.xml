@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Network policy for Aphrodite.
+
+  Cleartext HTTP is permitted on purpose. A large part of what this app talks to lives on the
+  local network — Ollama on 11434, LM Studio on 1234, llama.cpp on 8080, a homelab reverse
+  proxy, a NAS — and none of those commonly serve TLS. Refusing plain HTTP would rule out the
+  local-model workflow entirely.
+
+  The user trust anchor is included for the same reason: a self-hosted box frequently presents a
+  certificate from a private CA, which Android does not trust for apps by default. Without this,
+  every homelab HTTPS endpoint fails the handshake.
+
+  The trade-off is real and intentional: traffic to a public endpoint is no longer protected by
+  the platform's default refusal of cleartext. Users choose their own endpoints, and cloud
+  providers with public APIs all serve HTTPS regardless.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="user" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

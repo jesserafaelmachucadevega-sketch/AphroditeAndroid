@@ -142,9 +142,11 @@ class EndpointRepository @Inject constructor(
             endpointDao.recordProbe(endpointId, System.currentTimeMillis(), message)
             AppResult.Failure(AppError.Rejected(e.status, message))
         } catch (e: Exception) {
-            val message = e.message ?: "Could not reach the endpoint"
+            val message = describeNetworkFailure(e, resolved.endpoint.baseUrl)
             endpointDao.recordProbe(endpointId, System.currentTimeMillis(), message)
-            AppResult.Failure(AppError.Network(e))
+            // Carry the specific text through to the UI, not just onto the stored row:
+            // AppError.Network's own message is generic and would hide the cause.
+            AppResult.Failure(AppError.Unexpected(message))
         }
     }
 
@@ -191,4 +193,38 @@ class EndpointRepository @Inject constructor(
             in 500..599 -> "The provider is having trouble (HTTP ${e.status})"
             else -> "HTTP ${e.status}: ${e.body.take(200)}"
         }
+
+    /**
+     * Names the actual network failure.
+     *
+     * "Could not reach the endpoint" is useless: a wrong hostname, a refused port, a blocked
+     * plain-HTTP connection and a rejected certificate all need different fixes, and the user
+     * can only act on the specific one.
+     */
+    private fun describeNetworkFailure(e: Throwable, baseUrl: String): String {
+        val host = runCatching { java.net.URI(baseUrl).host }.getOrNull() ?: baseUrl
+
+        return when (e) {
+            is java.net.UnknownHostException ->
+                "Could not resolve \"$host\". Check the base URL for a typo."
+
+            is java.net.ConnectException ->
+                "Connection refused by $host. Is the server running, and is the port right?"
+
+            is java.net.SocketTimeoutException ->
+                "$host did not respond in time."
+
+            is javax.net.ssl.SSLException ->
+                "The TLS handshake with $host failed. The certificate was rejected."
+
+            is java.net.NoRouteToHostException ->
+                "No route to $host. The device may be on a different network."
+
+            is java.net.UnknownServiceException ->
+                "Android blocked a plain-HTTP connection to $host."
+
+            else -> e.message?.takeIf { it.isNotBlank() }
+                ?: "Could not reach $host (${e::class.simpleName})"
+        }
+    }
 }

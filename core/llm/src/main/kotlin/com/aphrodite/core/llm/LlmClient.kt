@@ -19,6 +19,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
 import okhttp3.Request
@@ -70,15 +71,15 @@ class LlmClient @Inject constructor(
     }.flowOn(Dispatchers.IO)
 
     /** Runs a request without streaming, for probes and short utility calls. */
-    suspend fun complete(request: LlmRequest): LlmResult {
+    suspend fun complete(request: LlmRequest): LlmResult = withContext(Dispatchers.IO) {
         val adapter = adapters.forKind(ProviderKind.fromId(request.providerId))
         val call = httpFactory.standard.newCall(adapter.buildRequest(request))
         call.execute().use { response ->
             val body = response.body?.string().orEmpty()
             if (!response.isSuccessful) throw ProviderHttpException(response.code, body.take(500))
             val payload = runCatching { JSON.parseToJsonElement(body).jsonObject }.getOrNull()
-                ?: return LlmResult(content = "", model = request.model)
-            return when (val delta = adapter.parseResponse(payload)) {
+                ?: return@withContext LlmResult(content = "", model = request.model)
+            when (val delta = adapter.parseResponse(payload)) {
                 is ProviderDelta.TextDelta ->
                     LlmResult(content = delta.text, model = request.model)
 
@@ -90,13 +91,20 @@ class LlmClient @Inject constructor(
         }
     }
 
-    /** Fetches the models an endpoint advertises. */
+    /**
+     * Fetches the models an endpoint advertises.
+     *
+     * Runs on the IO dispatcher: the adapter performs a blocking `execute()`, and calling that
+     * from the main thread raises `NetworkOnMainThreadException` on Android.
+     */
     suspend fun listModels(
         kind: ProviderKind,
         baseUrl: String,
         apiKey: String?,
         headers: Map<String, String> = emptyMap(),
-    ) = adapters.forKind(kind).listModels(httpFactory.standard, baseUrl, apiKey, headers)
+    ) = withContext(Dispatchers.IO) {
+        adapters.forKind(kind).listModels(httpFactory.standard, baseUrl, apiKey, headers)
+    }
 
     private companion object {
         const val DONE_SENTINEL = "[DONE]"
