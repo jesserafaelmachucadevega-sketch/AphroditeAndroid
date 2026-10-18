@@ -72,6 +72,10 @@ interface ModelDao {
     @Query("SELECT * FROM models WHERE endpoint_id = :endpointId AND model_id = :modelId")
     suspend fun get(endpointId: String, modelId: String): ModelEntity?
 
+    /** One-shot read of an endpoint's models, used to carry user state across a refresh. */
+    @Query("SELECT * FROM models WHERE endpoint_id = :endpointId")
+    suspend fun forEndpoint(endpointId: String): List<ModelEntity>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertAll(models: List<ModelEntity>)
 

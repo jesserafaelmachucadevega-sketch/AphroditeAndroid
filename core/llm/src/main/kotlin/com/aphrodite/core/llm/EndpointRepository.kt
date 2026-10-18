@@ -152,9 +152,19 @@ class EndpointRepository @Inject constructor(
         }
     }
 
+    /**
+     * Writes a freshly discovered model list.
+     *
+     * Refreshing replaces the catalogue, but the user's own state on each model — favourite and
+     * hidden — is carried across by model id. Without that, re-fetching a provider silently
+     * un-stars everything someone had marked.
+     */
     private suspend fun persist(endpointId: String, descriptors: List<ModelDescriptor>) {
         val now = System.currentTimeMillis()
+        val previous = modelDao.forEndpoint(endpointId).associateBy { it.modelId }
+
         val rows = descriptors.map { descriptor ->
+            val existing = previous[descriptor.id]
             ModelEntity(
                 id = "$endpointId:${descriptor.id}",
                 endpointId = endpointId,
@@ -162,17 +172,18 @@ class EndpointRepository @Inject constructor(
                 displayName = descriptor.displayName,
                 contextLength = descriptor.contextLength,
                 maxOutput = descriptor.maxOutput,
-                vision = descriptor.supportsVision ?: false,
-                tools = descriptor.supportsTools ?: false,
-                reasoning = descriptor.supportsReasoning ?: false,
-                inputCostPerMillion = descriptor.inputCostPerMillion,
-                outputCostPerMillion = descriptor.outputCostPerMillion,
-                isFavourite = false,
-                isHidden = false,
+                vision = descriptor.supportsVision ?: existing?.vision ?: false,
+                tools = descriptor.supportsTools ?: existing?.tools ?: false,
+                reasoning = descriptor.supportsReasoning ?: existing?.reasoning ?: false,
+                inputCostPerMillion = descriptor.inputCostPerMillion
+                    ?: existing?.inputCostPerMillion,
+                outputCostPerMillion = descriptor.outputCostPerMillion
+                    ?: existing?.outputCostPerMillion,
+                isFavourite = existing?.isFavourite ?: false,
+                isHidden = existing?.isHidden ?: false,
                 discoveredAt = now,
             )
         }
-        // Replacing wholesale would discard favourites, so only the discovery fields are rewritten.
         modelDao.deleteForEndpoint(endpointId)
         modelDao.upsertAll(rows)
     }
