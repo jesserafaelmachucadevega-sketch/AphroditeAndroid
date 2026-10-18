@@ -35,10 +35,12 @@ class EndpointRepository @Inject constructor(
     private val client: LlmClient,
 ) {
     fun observeEndpoints(): Flow<List<ModelEndpointEntity>> = endpointDao.observeAll()
-
     fun observeEnabledEndpoints(): Flow<List<ModelEndpointEntity>> = endpointDao.observeEnabled()
 
     fun observeModels(endpointId: String): Flow<List<ModelEntity>> = modelDao.observeForEndpoint(endpointId)
+
+    /** Every discovered model across all endpoints, for the chat model picker. */
+    fun observeAllModels(): Flow<List<ModelEntity>> = modelDao.observeAll()
 
     fun observeFavourites(): Flow<List<ModelEntity>> = modelDao.observeFavourites()
 

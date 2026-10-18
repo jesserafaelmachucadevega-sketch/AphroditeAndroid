@@ -30,8 +30,24 @@ data class ChatUiState(
     val searchQuery: String = "",
     /** False until a provider is configured, so the empty state can point at Settings. */
     val hasProvider: Boolean = true,
+    /** Every discovered model, free ones first. */
+    val allModels: List<com.aphrodite.core.database.entity.ModelEntity> = emptyList(),
+    val allEndpoints: List<com.aphrodite.core.database.entity.ModelEndpointEntity> = emptyList(),
+    val showModelPicker: Boolean = false,
+    val modelQuery: String = "",
 ) {
     val canSend: Boolean get() = !isStreaming && input.isNotBlank()
+
+    /** The model the active session will use. */
+    val currentModel: String? get() = activeSession?.model
+
+    /** Models after applying the picker's filter. */
+    val visibleModels: List<com.aphrodite.core.database.entity.ModelEntity>
+        get() = if (modelQuery.isBlank()) {
+            allModels
+        } else {
+            allModels.filter { it.modelId.contains(modelQuery, ignoreCase = true) }
+        }
 
     /** Sessions after applying the search box, which filters locally. */
     val visibleSessions: List<SessionEntity>
@@ -72,6 +88,16 @@ class ChatViewModel @Inject constructor(
             }
         }
         viewModelScope.launch {
+            repository.observeAllModels().collect { models ->
+                _state.update { it.copy(allModels = models) }
+            }
+        }
+        viewModelScope.launch {
+            repository.observeEndpoints().collect { endpoints ->
+                _state.update { it.copy(allEndpoints = endpoints) }
+            }
+        }
+        viewModelScope.launch {
             repository.observeSessions().collect { sessions ->
                 val previousActiveId = _state.value.activeSession?.id
                 val active = sessions.firstOrNull { it.id == previousActiveId } ?: sessions.firstOrNull()
@@ -89,6 +115,19 @@ class ChatViewModel @Inject constructor(
     fun onInputChange(value: String) = _state.update { it.copy(input = value, error = null) }
 
     fun onSearchChange(value: String) = _state.update { it.copy(searchQuery = value) }
+
+    fun toggleModelPicker() = _state.update {
+        it.copy(showModelPicker = !it.showModelPicker, modelQuery = "")
+    }
+
+    fun onModelQueryChange(value: String) = _state.update { it.copy(modelQuery = value) }
+
+    /** Points the active session at a different model. */
+    fun selectModel(endpointId: String, modelId: String) {
+        val session = _state.value.activeSession ?: return
+        viewModelScope.launch { repository.setSessionModel(session.id, modelId, endpointId) }
+        _state.update { it.copy(showModelPicker = false, modelQuery = "", error = null) }
+    }
 
     fun selectSession(sessionId: String) {
         if (_state.value.activeSession?.id == sessionId) return

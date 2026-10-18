@@ -9,8 +9,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -25,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import com.aphrodite.core.database.entity.ModelEndpointEntity
 import com.aphrodite.core.database.entity.ModelEntity
 import com.aphrodite.core.database.entity.ProviderKind
+import com.aphrodite.designsystem.components.AphroditeBadge
 import com.aphrodite.designsystem.components.AphroditeButton
 import com.aphrodite.designsystem.components.AphroditeButtonSize
 import com.aphrodite.designsystem.components.AphroditeButtonStyle
@@ -33,6 +37,7 @@ import com.aphrodite.designsystem.components.AphroditeDivider
 import com.aphrodite.designsystem.components.AphroditeEmptyState
 import com.aphrodite.designsystem.components.AphroditeIconButton
 import com.aphrodite.designsystem.components.AphroditeSectionHeader
+import com.aphrodite.designsystem.components.AphroditeSearchField
 import com.aphrodite.designsystem.components.AphroditeSpinner
 import com.aphrodite.designsystem.components.AphroditeTextField
 import com.aphrodite.designsystem.icons.AphroditeIcons
@@ -48,7 +53,17 @@ data class ServicesState(
     val busy: Boolean = false,
     val message: String? = null,
     val error: String? = null,
-)
+    /** Filter text for the model list. */
+    val modelQuery: String = "",
+) {
+    /** Models after applying the filter, free ones first. */
+    val visibleModels: List<ModelEntity>
+        get() = if (modelQuery.isBlank()) {
+            models
+        } else {
+            models.filter { it.modelId.contains(modelQuery, ignoreCase = true) }
+        }
+}
 
 /** The endpoint form's contents while it is open. */
 data class EndpointDraft(
@@ -75,6 +90,7 @@ data class ServicesHandlers(
     val onRefreshModels: (String) -> Unit,
     val onSelectModels: (String) -> Unit,
     val onToggleFavourite: (String, Boolean) -> Unit,
+    val onModelQueryChange: (String) -> Unit,
 )
 
 /**
@@ -153,8 +169,82 @@ fun ServicesSettingsPanel(
                     icon = AphroditeIcons.Plus,
                     style = AphroditeButtonStyle.Secondary,
                 )
+
+                if (state.models.isNotEmpty()) {
+                    Box(Modifier.size(AphroditeSpacing.lg))
+                    ModelList(state = state, handlers = handlers)
+                }
             }
         }
+    }
+}
+
+/**
+ * The models discovered on the selected endpoint.
+ *
+ * A catalogue can run to hundreds of entries, so the list is height-bounded and filterable
+ * rather than pushing the rest of the panel off the screen.
+ */
+@Composable
+private fun ModelList(state: ServicesState, handlers: ServicesHandlers) {
+    val colors = aphroditeColors
+    Column {
+        AphroditeSectionHeader(
+            title = "Models (${state.models.size})",
+            icon = AphroditeIcons.Cpu,
+        )
+        AphroditeSearchField(
+            value = state.modelQuery,
+            onValueChange = handlers.onModelQueryChange,
+            placeholder = "Filter models",
+        )
+        Box(Modifier.size(AphroditeSpacing.sm))
+
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(max = 420.dp)
+                .clip(RoundedCornerShape(AphroditeRadius.xs))
+                .border(1.dp, colors.border, RoundedCornerShape(AphroditeRadius.xs)),
+        ) {
+            items(state.visibleModels, key = { it.id }) { model ->
+                ModelRow(model = model, onToggleFavourite = handlers.onToggleFavourite)
+            }
+        }
+    }
+}
+
+@Composable
+private fun ModelRow(model: ModelEntity, onToggleFavourite: (String, Boolean) -> Unit) {
+    val colors = aphroditeColors
+    val isFree = model.modelId.endsWith(":free", ignoreCase = true)
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(colors.panel)
+            .padding(horizontal = AphroditeSpacing.sm, vertical = AphroditeSpacing.sm),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = model.modelId,
+            color = colors.fg,
+            style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
+            maxLines = 1,
+            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
+        )
+        if (isFree) {
+            AphroditeBadge(text = "free", color = colors.colorSuccess)
+            Box(Modifier.size(AphroditeSpacing.sm))
+        }
+        AphroditeIconButton(
+            icon = AphroditeIcons.Star,
+            contentDescription = if (model.isFavourite) "Unfavourite" else "Favourite",
+            onClick = { onToggleFavourite(model.id, !model.isFavourite) },
+            size = 24.dp,
+            tint = if (model.isFavourite) colors.accentPrimary else colors.colorMuted,
+        )
     }
 }
 

@@ -42,8 +42,29 @@ interface ModelEndpointDao {
 @Dao
 interface ModelDao {
 
-    @Query("SELECT * FROM models WHERE endpoint_id = :endpointId AND is_hidden = 0 ORDER BY is_favourite DESC, model_id ASC")
+    /**
+     * Models on one endpoint.
+     *
+     * Free models sort first. OpenRouter names them with a `:free` suffix and they are the
+     * sensible default for anyone browsing a catalogue of hundreds — paying models are one
+     * scroll away, but nothing costs money by accident.
+     */
+    @Query(
+        "SELECT * FROM models WHERE endpoint_id = :endpointId AND is_hidden = 0 " +
+            "ORDER BY is_favourite DESC, " +
+            "CASE WHEN model_id LIKE '%:free' THEN 0 ELSE 1 END ASC, " +
+            "model_id ASC",
+    )
     fun observeForEndpoint(endpointId: String): Flow<List<ModelEntity>>
+
+    /** Every model across every endpoint, ordered the same way. Used by the chat model picker. */
+    @Query(
+        "SELECT * FROM models WHERE is_hidden = 0 " +
+            "ORDER BY is_favourite DESC, " +
+            "CASE WHEN model_id LIKE '%:free' THEN 0 ELSE 1 END ASC, " +
+            "model_id ASC",
+    )
+    fun observeAll(): Flow<List<ModelEntity>>
 
     @Query("SELECT * FROM models WHERE is_favourite = 1 AND is_hidden = 0 ORDER BY model_id ASC")
     fun observeFavourites(): Flow<List<ModelEntity>>

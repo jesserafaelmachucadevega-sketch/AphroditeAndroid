@@ -111,6 +111,9 @@ fun AphroditeNavHost(
                         settingsCategory = SettingsCategory.Services
                         navController.navigate(Routes.SETTINGS) { launchSingleTop = true }
                     },
+                    onToggleModelPicker = chatViewModel::toggleModelPicker,
+                    onModelQueryChange = chatViewModel::onModelQueryChange,
+                    onSelectModel = chatViewModel::selectModel,
                 )
             }
             composable(Routes.SETTINGS) {
@@ -141,6 +144,7 @@ private fun SettingsViewModel.toServicesHandlers(): ServicesHandlers = ServicesH
     onRefreshModels = ::refreshModels,
     onSelectModels = ::selectModels,
     onToggleFavourite = ::toggleFavourite,
+    onModelQueryChange = ::onModelQueryChange,
 )
 
 private fun titleFor(route: String): String = when (route) {

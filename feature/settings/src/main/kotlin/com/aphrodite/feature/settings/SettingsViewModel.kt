@@ -143,6 +143,8 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch { endpoints.setFavourite(modelRowId, favourite) }
     }
 
+    fun onModelQueryChange(value: String) = _services.update { it.copy(modelQuery = value) }
+
     fun dismissMessages() = _services.update { it.copy(message = null, error = null) }
 
     private fun loadModels(endpointId: String) {

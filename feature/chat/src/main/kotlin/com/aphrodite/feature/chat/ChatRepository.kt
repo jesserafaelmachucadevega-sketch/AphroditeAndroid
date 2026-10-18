@@ -41,6 +41,13 @@ class ChatRepository @Inject constructor(
      */
     fun observeHasProvider(): Flow<Boolean> = endpointDao.observeEnabled().map { it.isNotEmpty() }
 
+    /** Every model across every endpoint, free ones first, for the in-chat picker. */
+    fun observeAllModels(): Flow<List<com.aphrodite.core.database.entity.ModelEntity>> =
+        endpoints.observeAllModels()
+
+    fun observeEndpoints(): Flow<List<com.aphrodite.core.database.entity.ModelEndpointEntity>> =
+        endpoints.observeEndpoints()
+
     fun observeArchived(): Flow<List<SessionEntity>> = sessionDao.observeArchived()
 
     fun observeFolders(): Flow<List<String>> = sessionDao.observeFolders()

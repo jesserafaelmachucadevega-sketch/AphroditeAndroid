@@ -74,6 +74,9 @@ fun ChatScreen(
     onStop: () -> Unit,
     onDismissError: () -> Unit,
     onOpenProviders: () -> Unit,
+    onToggleModelPicker: () -> Unit,
+    onModelQueryChange: (String) -> Unit,
+    onSelectModel: (String, String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     AphroditeTwoPane(
@@ -109,6 +112,9 @@ fun ChatScreen(
                 onStop = onStop,
                 onDismissError = onDismissError,
                 onOpenProviders = onOpenProviders,
+                onToggleModelPicker = onToggleModelPicker,
+                onModelQueryChange = onModelQueryChange,
+                onSelectModel = onSelectModel,
             )
         },
     )
@@ -265,10 +271,22 @@ private fun Conversation(
     onStop: () -> Unit,
     onDismissError: () -> Unit,
     onOpenProviders: () -> Unit,
+    onToggleModelPicker: () -> Unit,
+    onModelQueryChange: (String) -> Unit,
+    onSelectModel: (String, String) -> Unit,
 ) {
     val colors = aphroditeColors
     val listState = rememberLazyListState()
     val renderer = remember(colors) { MarkdownRenderer(colors) }
+
+    if (state.showModelPicker) {
+        ModelPickerDialog(
+            state = state,
+            onDismiss = onToggleModelPicker,
+            onQueryChange = onModelQueryChange,
+            onSelect = onSelectModel,
+        )
+    }
 
     // Keep the newest content in view as the answer streams in.
     LaunchedEffect(state.messages.size, state.streamingText) {
@@ -277,6 +295,11 @@ private fun Conversation(
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
+        ModelBar(
+            model = state.currentModel,
+            endpointName = state.activeSession?.endpointName,
+            onClick = onToggleModelPicker,
+        )
         if (state.error != null) {
             ErrorBanner(state.error, onDismissError)
         }
@@ -709,6 +732,167 @@ private fun Composer(
             size = 44.dp,
         )
     }
+}
+
+/** The current model, shown above the transcript and tappable to change it. */
+@Composable
+private fun ModelBar(model: String?, endpointName: String?, onClick: () -> Unit) {
+    val colors = aphroditeColors
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(colors.panel)
+            .clickable(role = Role.Button, onClick = onClick)
+            .padding(horizontal = AphroditeSpacing.md, vertical = AphroditeSpacing.sm),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            imageVector = AphroditeIcons.Cpu,
+            contentDescription = null,
+            tint = colors.colorMuted,
+            modifier = Modifier.size(13.dp),
+        )
+        Box(Modifier.size(AphroditeSpacing.sm))
+        Text(
+            text = model ?: "Choose a model",
+            color = if (model != null) colors.fg else colors.accentPrimary,
+            style = androidx.compose.material3.MaterialTheme.typography.labelMedium,
+            maxLines = 1,
+            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
+        )
+        if (endpointName != null) {
+            Text(
+                text = endpointName,
+                color = colors.colorMuted,
+                style = androidx.compose.material3.MaterialTheme.typography.labelSmall,
+                maxLines = 1,
+            )
+            Box(Modifier.size(AphroditeSpacing.sm))
+        }
+        Icon(
+            imageVector = AphroditeIcons.ChevronDown,
+            contentDescription = "Change model",
+            tint = colors.colorMuted,
+            modifier = Modifier.size(12.dp),
+        )
+    }
+    AphroditeDivider()
+}
+
+/**
+ * Picks the model for this conversation.
+ *
+ * Free models sort first, which matters for a catalogue like OpenRouter where hundreds of paid
+ * models would otherwise bury the ones that cost nothing.
+ */
+@Composable
+private fun ModelPickerDialog(
+    state: ChatUiState,
+    onDismiss: () -> Unit,
+    onQueryChange: (String) -> Unit,
+    onSelect: (String, String) -> Unit,
+) {
+    val colors = aphroditeColors
+    val endpointNames = remember(state.allEndpoints) {
+        state.allEndpoints.associate { it.id to it.name }
+    }
+
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = colors.panel,
+        confirmButton = {
+            androidx.compose.material3.TextButton(onClick = onDismiss) {
+                Text("Close", color = colors.accentPrimary)
+            }
+        },
+        title = {
+            Text(
+                text = "Choose a model",
+                color = colors.fg,
+                style = androidx.compose.material3.MaterialTheme.typography.titleMedium,
+            )
+        },
+        text = {
+            Column {
+                AphroditeSearchField(
+                    value = state.modelQuery,
+                    onValueChange = onQueryChange,
+                    placeholder = "Filter ${state.allModels.size} models",
+                )
+                Box(Modifier.size(AphroditeSpacing.sm))
+
+                if (state.visibleModels.isEmpty()) {
+                    Text(
+                        text = if (state.allModels.isEmpty()) {
+                            "No models yet. Add a provider in Settings and fetch its models."
+                        } else {
+                            "No models match that filter."
+                        },
+                        color = colors.colorMuted,
+                        style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
+                    )
+                } else {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 400.dp),
+                    ) {
+                        items(state.visibleModels, key = { it.id }) { model ->
+                            val selected = model.modelId == state.currentModel &&
+                                model.endpointId == state.activeSession?.endpointId
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(AphroditeRadius.xs))
+                                    .background(
+                                        if (selected) colors.accentPrimary.copy(alpha = 0.14f)
+                                        else androidx.compose.ui.graphics.Color.Transparent,
+                                    )
+                                    .clickable(role = Role.Button) {
+                                        onSelect(model.endpointId, model.modelId)
+                                    }
+                                    .padding(horizontal = AphroditeSpacing.sm, vertical = AphroditeSpacing.sm),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = model.modelId,
+                                        color = if (selected) colors.accentPrimary else colors.fg,
+                                        style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
+                                        maxLines = 1,
+                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                    )
+                                    endpointNames[model.endpointId]?.let { name ->
+                                        Text(
+                                            text = name,
+                                            color = colors.colorMuted,
+                                            style = androidx.compose.material3.MaterialTheme.typography.labelSmall,
+                                        )
+                                    }
+                                }
+                                if (model.modelId.endsWith(":free", ignoreCase = true)) {
+                                    com.aphrodite.designsystem.components.AphroditeBadge(
+                                        text = "free",
+                                        color = colors.colorSuccess,
+                                    )
+                                    Box(Modifier.size(AphroditeSpacing.sm))
+                                }
+                                if (selected) {
+                                    Icon(
+                                        imageVector = AphroditeIcons.Check,
+                                        contentDescription = null,
+                                        tint = colors.accentPrimary,
+                                        modifier = Modifier.size(14.dp),
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+    )
 }
 
 /** Small helper so the clickable modifier stays readable at the call sites. */
