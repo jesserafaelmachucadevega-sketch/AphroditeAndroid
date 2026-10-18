@@ -28,6 +28,8 @@ data class ChatUiState(
     val isStreaming: Boolean = false,
     val error: String? = null,
     val searchQuery: String = "",
+    /** False until a provider is configured, so the empty state can point at Settings. */
+    val hasProvider: Boolean = true,
 ) {
     val canSend: Boolean get() = !isStreaming && input.isNotBlank()
 
@@ -64,6 +66,11 @@ class ChatViewModel @Inject constructor(
     private var observedSessionId: String? = null
 
     init {
+        viewModelScope.launch {
+            repository.observeHasProvider().collect { hasProvider ->
+                _state.update { it.copy(hasProvider = hasProvider) }
+            }
+        }
         viewModelScope.launch {
             repository.observeSessions().collect { sessions ->
                 val previousActiveId = _state.value.activeSession?.id

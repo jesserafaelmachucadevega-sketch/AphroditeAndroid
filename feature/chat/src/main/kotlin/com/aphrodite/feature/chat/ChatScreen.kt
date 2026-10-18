@@ -45,6 +45,7 @@ import com.aphrodite.core.database.entity.MessageRole
 import com.aphrodite.core.database.entity.SessionEntity
 import com.aphrodite.core.markdown.MarkdownBlock
 import com.aphrodite.core.markdown.MarkdownRenderer
+import com.aphrodite.designsystem.components.AphroditeButton
 import com.aphrodite.designsystem.components.AphroditeDivider
 import com.aphrodite.designsystem.components.AphroditeEmptyState
 import com.aphrodite.designsystem.components.AphroditeIconButton
@@ -72,6 +73,7 @@ fun ChatScreen(
     onSend: () -> Unit,
     onStop: () -> Unit,
     onDismissError: () -> Unit,
+    onOpenProviders: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     AphroditeTwoPane(
@@ -85,14 +87,19 @@ fun ChatScreen(
                 onNew = onNewSession,
                 onDelete = onDeleteSession,
                 onSearchChange = onSearchChange,
+                onOpenProviders = onOpenProviders,
             )
         },
         emptyDetail = {
-            AphroditeEmptyState(
-                title = "No conversation selected",
-                description = "Start a new chat to begin.",
-                icon = AphroditeIcons.Chat,
-            )
+            if (state.hasProvider) {
+                AphroditeEmptyState(
+                    title = "No conversation selected",
+                    description = "Start a new chat to begin.",
+                    icon = AphroditeIcons.Chat,
+                )
+            } else {
+                ProviderPrompt(onOpenProviders)
+            }
         },
         detail = {
             Conversation(
@@ -101,6 +108,29 @@ fun ChatScreen(
                 onSend = onSend,
                 onStop = onStop,
                 onDismissError = onDismissError,
+                onOpenProviders = onOpenProviders,
+            )
+        },
+    )
+}
+
+/**
+ * Shown instead of an empty chat when nothing can answer yet.
+ *
+ * A blank conversation with no explanation is the least useful thing a first run can show.
+ */
+@Composable
+private fun ProviderPrompt(onOpenProviders: () -> Unit) {
+    AphroditeEmptyState(
+        title = "Add a provider to start",
+        description = "Aphrodite needs a model to talk to. Add an API key for a cloud provider, " +
+            "or point it at a local runtime like Ollama.",
+        icon = AphroditeIcons.Server,
+        action = {
+            AphroditeButton(
+                text = "Open providers",
+                onClick = onOpenProviders,
+                icon = AphroditeIcons.Server,
             )
         },
     )
@@ -113,6 +143,7 @@ private fun SessionList(
     onNew: () -> Unit,
     onDelete: (String) -> Unit,
     onSearchChange: (String) -> Unit,
+    onOpenProviders: () -> Unit,
 ) {
     val colors = aphroditeColors
     Column(modifier = Modifier.fillMaxSize()) {
@@ -147,11 +178,17 @@ private fun SessionList(
         AphroditeDivider()
 
         if (state.visibleSessions.isEmpty()) {
-            AphroditeEmptyState(
-                title = if (state.searchQuery.isBlank()) "No chats yet" else "No matches",
-                description = if (state.searchQuery.isBlank()) "Start one to get going." else null,
-                icon = AphroditeIcons.Chat,
-            )
+            // On a compact layout the list pane is the first thing anyone sees, so the
+            // first-run explanation has to live here too — not only in the detail pane.
+            if (!state.hasProvider) {
+                ProviderPrompt(onOpenProviders)
+            } else {
+                AphroditeEmptyState(
+                    title = if (state.searchQuery.isBlank()) "No chats yet" else "No matches",
+                    description = if (state.searchQuery.isBlank()) "Start one to get going." else null,
+                    icon = AphroditeIcons.Chat,
+                )
+            }
         } else {
             LazyColumn(modifier = Modifier.fillMaxSize()) {
                 items(state.visibleSessions, key = { it.id }) { session ->
@@ -227,6 +264,7 @@ private fun Conversation(
     onSend: () -> Unit,
     onStop: () -> Unit,
     onDismissError: () -> Unit,
+    onOpenProviders: () -> Unit,
 ) {
     val colors = aphroditeColors
     val listState = rememberLazyListState()
@@ -245,12 +283,16 @@ private fun Conversation(
 
         Box(modifier = Modifier.weight(1f)) {
             if (state.messages.isEmpty() && state.streamingText.isEmpty()) {
-                AphroditeEmptyState(
-                    title = state.activeSession?.name ?: "New chat",
-                    description = state.activeSession?.model
-                        ?: "Pick a model in Settings, then start typing.",
-                    icon = AphroditeIcons.Chat,
-                )
+                if (!state.hasProvider) {
+                    ProviderPrompt(onOpenProviders)
+                } else {
+                    AphroditeEmptyState(
+                        title = state.activeSession?.name ?: "New chat",
+                        description = state.activeSession?.model
+                            ?: "Pick a model in Settings, then start typing.",
+                        icon = AphroditeIcons.Chat,
+                    )
+                }
             } else {
                 LazyColumn(
                     state = listState,

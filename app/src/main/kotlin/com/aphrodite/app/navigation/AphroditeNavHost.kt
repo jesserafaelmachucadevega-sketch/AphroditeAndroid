@@ -50,7 +50,8 @@ fun AphroditeNavHost(
     val profile = LocalDeviceProfile.current
     val context = LocalContext.current
 
-    var settingsCategory by rememberSaveable { mutableStateOf(SettingsCategory.Appearance) }
+    // Providers first: on a fresh install, configuring one is the only thing that matters.
+    var settingsCategory by rememberSaveable { mutableStateOf(SettingsCategory.Services) }
 
     val destinations = remember { destinationsFor(isAdmin = true) }
     val buildInfo = remember(context) { collectBuildInfo() }
@@ -91,6 +92,10 @@ fun AphroditeNavHost(
                     onSend = chatViewModel::send,
                     onStop = chatViewModel::stopStreaming,
                     onDismissError = chatViewModel::dismissError,
+                    onOpenProviders = {
+                        settingsCategory = SettingsCategory.Services
+                        navController.navigate(Routes.SETTINGS) { launchSingleTop = true }
+                    },
                 )
             }
             composable(Routes.SETTINGS) {

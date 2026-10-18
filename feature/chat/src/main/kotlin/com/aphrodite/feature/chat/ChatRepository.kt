@@ -14,6 +14,7 @@ import com.aphrodite.core.llm.model.LlmRequest
 import com.aphrodite.core.llm.model.LlmRole
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -31,6 +32,14 @@ class ChatRepository @Inject constructor(
     private val endpoints: EndpointRepository,
 ) {
     fun observeSessions(): Flow<List<SessionEntity>> = sessionDao.observeActive()
+
+    /**
+     * True once at least one provider is configured.
+     *
+     * The chat surface uses this to tell a first-time user where to go instead of showing an
+     * empty box with no explanation.
+     */
+    fun observeHasProvider(): Flow<Boolean> = endpointDao.observeEnabled().map { it.isNotEmpty() }
 
     fun observeArchived(): Flow<List<SessionEntity>> = sessionDao.observeArchived()
 
