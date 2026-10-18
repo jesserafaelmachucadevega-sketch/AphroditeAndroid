@@ -60,8 +60,23 @@ fun AphroditeNavHost(
         destinations = destinations,
         selectedRoute = currentRoute,
         onNavigate = { route ->
-            if (route != currentRoute) {
-                navController.navigate(route) {
+            // Themes and Admin are shortcuts into Settings with a category preselected, not
+            // separate screens. Rendering a second copy of the settings surface meant the tab
+            // strip there could not actually change category, and it missed the providers
+            // wiring entirely.
+            val target = when (route) {
+                Routes.THEMES -> {
+                    settingsCategory = SettingsCategory.Appearance
+                    Routes.SETTINGS
+                }
+                Routes.ADMIN -> {
+                    settingsCategory = SettingsCategory.About
+                    Routes.SETTINGS
+                }
+                else -> route
+            }
+            if (target != currentRoute) {
+                navController.navigate(target) {
                     launchSingleTop = true
                     restoreState = true
                 }
@@ -108,26 +123,6 @@ fun AphroditeNavHost(
                     buildInfo = buildInfo,
                     servicesState = servicesState,
                     servicesHandlers = settingsViewModel.toServicesHandlers(),
-                )
-            }
-            composable(Routes.THEMES) {
-                SettingsScreen(
-                    state = preferences.toAppearanceState(),
-                    handlers = viewModel.toAppearanceHandlers(),
-                    themes = AphroditeThemes.all,
-                    selected = SettingsCategory.Appearance,
-                    onSelect = { settingsCategory = it },
-                    buildInfo = buildInfo,
-                )
-            }
-            composable(Routes.ADMIN) {
-                SettingsScreen(
-                    state = preferences.toAppearanceState(),
-                    handlers = viewModel.toAppearanceHandlers(),
-                    themes = AphroditeThemes.all,
-                    selected = SettingsCategory.About,
-                    onSelect = { settingsCategory = it },
-                    buildInfo = buildInfo,
                 )
             }
         }

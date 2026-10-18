@@ -93,7 +93,13 @@ fun ServicesSettingsPanel(
         modifier = modifier
             .fillMaxWidth()
             .verticalScroll(rememberScrollState())
-            .padding(AphroditeSpacing.lg),
+            .padding(
+                start = AphroditeSpacing.lg,
+                end = AphroditeSpacing.lg,
+                top = AphroditeSpacing.lg,
+                // Keeps the last control clear of the navigation bar.
+                bottom = AphroditeSpacing.huge,
+            ),
         verticalArrangement = Arrangement.spacedBy(AphroditeSpacing.lg),
     ) {
         if (state.editing != null) {

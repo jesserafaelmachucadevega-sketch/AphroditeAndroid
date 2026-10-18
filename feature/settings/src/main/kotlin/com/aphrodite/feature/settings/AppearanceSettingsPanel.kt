@@ -95,7 +95,9 @@ fun AppearanceSettingsPanel(
         modifier = modifier
             .fillMaxWidth()
             .verticalScroll(rememberScrollState())
-            .padding(AphroditeSpacing.lg),
+            // The trailing space keeps the last control clear of the navigation bar rather than
+            // sitting flush against it.
+            .padding(start = AphroditeSpacing.lg, end = AphroditeSpacing.lg, top = AphroditeSpacing.lg, bottom = AphroditeSpacing.huge),
         verticalArrangement = Arrangement.spacedBy(AphroditeSpacing.lg),
     ) {
         LayoutSection(state, handlers)

@@ -197,7 +197,14 @@ fun AphroditeNavigationScaffold(
                     Box(Modifier.size(AphroditeSpacing.sm))
                 }
 
-                Column(modifier = Modifier.fillMaxSize()) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        // Without this the content runs under the status and gesture bars.
+                        // The rail applies its own insets; the content column has to as well,
+                        // or the last item in any scrolling panel ends up unreachable.
+                        .windowInsetsPadding(WindowInsets.systemBars),
+                ) {
                     topBar(openDrawer)
                     if (tabletop) {
                         Box(
