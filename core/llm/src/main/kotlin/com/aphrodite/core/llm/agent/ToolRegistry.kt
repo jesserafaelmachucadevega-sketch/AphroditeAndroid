@@ -22,8 +22,17 @@ class ToolRegistry @Inject constructor(
     fetchUrl: FetchUrlTool,
     currentTime: CurrentTimeTool,
     calculate: CalculateTool,
+    private val mcp: com.aphrodite.core.llm.mcp.McpManager,
 ) {
-    val tools: List<Tool> = listOf(webSearch, fetchUrl, currentTime, calculate)
+    private val builtIn: List<Tool> = listOf(webSearch, fetchUrl, currentTime, calculate)
+
+    /**
+     * Built-in tools plus everything currently exposed by connected MCP servers.
+     *
+     * Read as a property rather than a captured list so a server connecting mid-session is picked
+     * up by the next turn without restarting anything.
+     */
+    val tools: List<Tool> get() = builtIn + mcp.tools.value
 
     /** Schemas sent to providers that support native function calling. */
     fun definitions(): List<ToolDefinition> = tools.map { tool ->

@@ -31,6 +31,7 @@ dependencies {
     implementation(project(":core:datastore"))
     implementation(project(":core:database"))
     implementation(project(":core:security"))
+    implementation(project(":core:llm"))
 
     implementation(project(":feature:auth"))
     implementation(project(":feature:chat"))

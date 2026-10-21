@@ -7,6 +7,7 @@ import com.aphrodite.core.database.dao.CalendarDao
 import com.aphrodite.core.database.dao.ChatMessageDao
 import com.aphrodite.core.database.dao.ContactDao
 import com.aphrodite.core.database.dao.ModelEndpointDao
+import com.aphrodite.core.database.dao.McpDao
 import com.aphrodite.core.database.dao.ModelDao
 import com.aphrodite.core.database.dao.NoteDao
 import com.aphrodite.core.database.dao.PresetDao
@@ -23,6 +24,8 @@ import com.aphrodite.core.database.entity.ChatMessageEntity
 import com.aphrodite.core.database.entity.ContactEntity
 import com.aphrodite.core.database.entity.ModelEndpointEntity
 import com.aphrodite.core.database.entity.ModelEntity
+import com.aphrodite.core.database.entity.McpServerEntity
+import com.aphrodite.core.database.entity.McpToolEntity
 import com.aphrodite.core.database.entity.NoteEntity
 import com.aphrodite.core.database.entity.NoteItemEntity
 import com.aphrodite.core.database.entity.PresetEntity
@@ -56,8 +59,10 @@ import com.aphrodite.core.database.entity.UserProfileEntity
         ContactEntity::class,
         UserProfileEntity::class,
         AuthSessionEntity::class,
+        McpServerEntity::class,
+        McpToolEntity::class,
     ],
-    version = 1,
+    version = 2,
     exportSchema = true,
 )
 @TypeConverters(DatabaseConverters::class)
@@ -73,6 +78,7 @@ abstract class AphroditeDatabase : RoomDatabase() {
     abstract fun calendarDao(): CalendarDao
     abstract fun contactDao(): ContactDao
     abstract fun userDao(): UserDao
+    abstract fun mcpDao(): McpDao
 
     companion object {
         const val NAME = "aphrodite.db"

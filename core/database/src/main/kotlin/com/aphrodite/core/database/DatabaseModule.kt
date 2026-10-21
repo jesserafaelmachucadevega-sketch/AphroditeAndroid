@@ -33,6 +33,7 @@ object DatabaseModule {
             // Full-text search over chat history is served by LIKE queries over indexed columns
             // today; enabling WAL keeps reads from blocking the writer during streaming writes.
             .setJournalMode(RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING)
+            .addMigrations(*AphroditeMigrations.ALL)
             .addCallback(object : RoomDatabase.Callback() {
                 override fun onOpen(db: SupportSQLiteDatabase) {
                     // Foreign keys are off by default in SQLite; the schema relies on them for
@@ -74,4 +75,8 @@ object DatabaseModule {
 
     @Provides
     fun provideUserDao(database: AphroditeDatabase): UserDao = database.userDao()
+
+    @Provides
+    fun provideMcpDao(database: AphroditeDatabase): com.aphrodite.core.database.dao.McpDao =
+        database.mcpDao()
 }
