@@ -119,6 +119,14 @@ data class LlmRequest(
     val tools: List<ToolDefinition> = emptyList(),
     val settings: GenerationSettings = GenerationSettings(),
     val headers: Map<String, String> = emptyMap(),
+    /**
+     * The preset's persona text, if any.
+     *
+     * Kept separate from [messages] because the agent loop composes the final system prompt at
+     * run time: it needs to place the persona after the constitution and the live tool inventory,
+     * and it cannot do that once the persona has been flattened into a message.
+     */
+    val persona: String? = null,
 )
 
 /** Rough token/cost estimate for a completed call. */

@@ -17,6 +17,15 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+/** One tool invocation shown while a turn is running. */
+data class ToolActivity(
+    val id: String,
+    val tool: String,
+    val command: String,
+    val output: String? = null,
+    val isError: Boolean = false,
+)
+
 /** Everything the chat surface renders. */
 data class ChatUiState(
     val sessions: List<SessionEntity> = emptyList(),
@@ -26,6 +35,8 @@ data class ChatUiState(
     /** Answer text accumulated so far for the in-flight turn. */
     val streamingText: String = "",
     val streamingThinking: String = "",
+    /** Tools the agent has called during this turn. */
+    val toolActivity: List<ToolActivity> = emptyList(),
     val isStreaming: Boolean = false,
     val error: String? = null,
     val searchQuery: String = "",
@@ -72,7 +83,7 @@ data class ChatUiState(
 @HiltViewModel
 class ChatViewModel @Inject constructor(
     private val repository: ChatRepository,
-    private val client: LlmClient,
+    private val agent: com.aphrodite.core.llm.agent.AgentLoop,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(ChatUiState())
@@ -185,7 +196,16 @@ class ChatViewModel @Inject constructor(
             return
         }
 
-        _state.update { it.copy(input = "", isStreaming = true, streamingText = "", streamingThinking = "", error = null) }
+        _state.update {
+            it.copy(
+                input = "",
+                isStreaming = true,
+                streamingText = "",
+                streamingThinking = "",
+                toolActivity = emptyList(),
+                error = null,
+            )
+        }
 
         streamJob = viewModelScope.launch {
             repository.append(session.id, MessageRole.User, text)
@@ -200,7 +220,7 @@ class ChatViewModel @Inject constructor(
             val thinking = StringBuilder()
             var failure: String? = null
 
-            client.stream(request).collect { event ->
+            agent.run(request).collect { event ->
                 when (event) {
                     is LlmEvent.Delta -> {
                         answer.append(event.text)
@@ -221,6 +241,39 @@ class ChatViewModel @Inject constructor(
                         _state.update {
                             it.copy(streamingText = ScratchpadExtractor.visibleOnly(answer.toString()))
                         }
+                    }
+
+                    is LlmEvent.ToolStarted -> _state.update { current ->
+                        current.copy(
+                            toolActivity = current.toolActivity + ToolActivity(
+                                id = event.callId,
+                                tool = event.tool,
+                                command = event.command,
+                            ),
+                        )
+                    }
+
+                    is LlmEvent.ToolOutput -> _state.update { current ->
+                        current.copy(
+                            toolActivity = current.toolActivity.map { activity ->
+                                if (activity.id == event.callId) {
+                                    activity.copy(
+                                        output = event.output,
+                                        isError = (event.exitCode ?: 0) != 0,
+                                    )
+                                } else {
+                                    activity
+                                }
+                            },
+                        )
+                    }
+
+                    is LlmEvent.AgentStep -> {
+                        // A new round supersedes the previous one's prose. Without this the
+                        // visible answer accumulates every round's text, so "I need to look this
+                        // up" ends up prefixed onto the real answer.
+                        answer.clear()
+                        _state.update { it.copy(streamingText = "") }
                     }
 
                     is LlmEvent.Metrics -> {

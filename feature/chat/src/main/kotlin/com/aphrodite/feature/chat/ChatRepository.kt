@@ -192,13 +192,6 @@ class ChatRepository @Inject constructor(
         val history = messageDao.forSession(sessionId).takeLast(historyLimit)
 
         val messages = buildList {
-            // The constitution always leads, so a persona cannot override the operational rules.
-            add(
-                LlmMessage(
-                    role = LlmRole.System,
-                    content = com.aphrodite.core.llm.SystemConstitution.compose(preset?.systemPrompt),
-                ),
-            )
             history.forEach { entry ->
                 add(
                     LlmMessage(
@@ -220,6 +213,9 @@ class ChatRepository @Inject constructor(
             model = model,
             providerId = resolved.endpoint.kind.id,
             messages = messages,
+            // The agent loop prepends the constitution and the live tool inventory; the persona
+            // travels separately so it lands after both.
+            persona = preset?.systemPrompt,
             settings = GenerationSettings(
                 temperature = preset?.temperature,
                 topP = preset?.topP,

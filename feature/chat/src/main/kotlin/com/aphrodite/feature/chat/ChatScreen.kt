@@ -331,6 +331,7 @@ private fun Conversation(
                             StreamingBubble(
                                 thinking = state.streamingThinking,
                                 text = state.streamingText,
+                                activities = state.toolActivity,
                                 renderer = renderer,
                             )
                         }
@@ -433,6 +434,7 @@ private fun MessageBubble(message: ChatMessageEntity, renderer: MarkdownRenderer
 private fun StreamingBubble(
     thinking: String,
     text: String,
+    activities: List<ToolActivity>,
     renderer: MarkdownRenderer,
 ) {
     val colors = aphroditeColors
@@ -445,18 +447,87 @@ private fun StreamingBubble(
             .padding(AphroditeSpacing.md),
     ) {
         if (thinking.isNotBlank()) ThinkingBlock(thinking)
+
+        // Tool calls are shown as they happen: a silent pause while a model searches or fetches
+        // is indistinguishable from a hang.
+        activities.forEach { activity ->
+            ToolActivityRow(activity)
+        }
+        if (activities.isNotEmpty()) Box(Modifier.size(AphroditeSpacing.sm))
+
         if (text.isBlank()) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 AphroditeSpinner(size = 12.dp)
                 Box(Modifier.size(AphroditeSpacing.sm))
                 Text(
-                    text = "Thinking…",
+                    text = if (activities.isEmpty()) "Thinking…" else "Working…",
                     color = colors.colorMuted,
                     style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
                 )
             }
         } else {
             MarkdownContent(text = text, renderer = renderer)
+        }
+    }
+}
+
+/** One tool invocation: what was called, on what, and whether it succeeded. */
+@Composable
+private fun ToolActivityRow(activity: ToolActivity) {
+    val colors = aphroditeColors
+    val running = activity.output == null
+    val tint = when {
+        running -> colors.colorMuted
+        activity.isError -> colors.colorError
+        else -> colors.colorSuccess
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 2.dp)
+            .clip(RoundedCornerShape(AphroditeRadius.xs))
+            .background(colors.toggleBg)
+            .padding(horizontal = AphroditeSpacing.sm, vertical = AphroditeSpacing.xs),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            if (running) {
+                AphroditeSpinner(size = 10.dp, color = tint)
+            } else {
+                Icon(
+                    imageVector = if (activity.isError) AphroditeIcons.AlertCircle else AphroditeIcons.Check,
+                    contentDescription = null,
+                    tint = tint,
+                    modifier = Modifier.size(10.dp),
+                )
+            }
+            Box(Modifier.size(AphroditeSpacing.xs))
+            Text(
+                text = activity.tool,
+                color = tint,
+                style = androidx.compose.material3.MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.SemiBold,
+            )
+            if (activity.command.isNotBlank()) {
+                Box(Modifier.size(AphroditeSpacing.sm))
+                Text(
+                    text = activity.command,
+                    color = colors.colorMuted,
+                    style = androidx.compose.material3.MaterialTheme.typography.labelSmall,
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                )
+            }
+        }
+        activity.output?.takeIf { activity.isError }?.let { output ->
+            Box(Modifier.size(AphroditeSpacing.xs))
+            Text(
+                text = output,
+                color = colors.colorError,
+                style = androidx.compose.material3.MaterialTheme.typography.labelSmall,
+                maxLines = 3,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+            )
         }
     }
 }
