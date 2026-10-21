@@ -225,6 +225,12 @@ class ChatRepository @Inject constructor(
         )
     }
 
+    /** Whether a usable key is stored for an endpoint, for diagnosing an auth failure. */
+    suspend fun endpointHasKey(endpointId: String?): Boolean {
+        val id = endpointId ?: return false
+        return endpoints.resolve(id)?.apiKey?.isNotBlank() == true
+    }
+
     /** The endpoint and model most recently available, used when starting a new chat. */
     suspend fun defaultSelection(): Pair<String, String>? {
         val endpoint = endpointDao.observeEnabled().first().firstOrNull() ?: return null

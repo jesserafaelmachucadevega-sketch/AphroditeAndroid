@@ -220,6 +220,9 @@ class ChatViewModel @Inject constructor(
             val thinking = StringBuilder()
             var failure: String? = null
 
+            // Read once, before the turn: a 401 later should say whether a key went out.
+            val keyWasSent = repository.endpointHasKey(session.endpointId)
+
             agent.run(request).collect { event ->
                 when (event) {
                     is LlmEvent.Delta -> {
@@ -281,7 +284,7 @@ class ChatViewModel @Inject constructor(
                         if (tokens > 0) repository.recordUsage(session.id, tokens, 0.0)
                     }
 
-                    is LlmEvent.Failed -> failure = describeFailure(event)
+                    is LlmEvent.Failed -> failure = describeFailure(event, keyWasSent)
 
                     LlmEvent.Cancelled -> failure = null
 
@@ -348,18 +351,26 @@ class ChatViewModel @Inject constructor(
     /**
      * Turns a provider failure into something actionable.
      *
-     * A 401 from a provider reads like a broken app. It nearly always means the key is missing,
-     * wrong or expired, so say that and point at where to fix it.
+     * A 401 from a provider reads like a broken app. The app knows whether it actually sent a
+     * key, so the message says which of the two situations this is: nothing was sent, or
+     * something was sent and rejected.
      */
-    private fun describeFailure(event: LlmEvent.Failed): String = when (event.status) {
-        401, 403 ->
-            "The provider rejected the API key. Check it in Settings → Providers " +
-                "(the endpoint should say \"Key stored\")."
-        404 -> "The provider has no such model or endpoint. Check the base URL and the model name."
-        429 -> "The provider is rate limiting. Wait a moment and try again."
-        in 500..599 -> "The provider is having trouble (HTTP ${event.status}). Try again shortly."
-        else -> event.message
-    }
+    private fun describeFailure(event: LlmEvent.Failed, keyWasSent: Boolean): String =
+        when (event.status) {
+            401, 403 -> if (keyWasSent) {
+                "The provider rejected the API key that was sent. It is present on the device, " +
+                    "so it is probably invalid, expired, or has no credit. Check it in " +
+                    "Settings → Providers, or regenerate it on the provider's site."
+            } else {
+                "No API key is stored for this provider, so none was sent. Open " +
+                    "Settings → Providers, edit the endpoint and paste the key — the row should " +
+                    "then say \"Key stored\"."
+            }
+            404 -> "The provider has no such model or endpoint. Check the base URL and the model name."
+            429 -> "The provider is rate limiting. Wait a moment and try again."
+            in 500..599 -> "The provider is having trouble (HTTP ${event.status}). Try again shortly."
+            else -> event.message
+        }
 
     private fun observeMessages(sessionId: String) {
         messagesJob?.cancel()
