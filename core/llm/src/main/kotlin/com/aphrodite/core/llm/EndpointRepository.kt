@@ -83,7 +83,7 @@ class EndpointRepository @Inject constructor(
                 keyRef = null
             } else {
                 val reference = keyRef ?: "endpoint:$endpointId"
-                secretStore.put(reference, apiKey.trim())
+                secretStore.put(reference, normaliseKey(apiKey))
                 keyRef = reference
             }
         }
@@ -151,6 +151,23 @@ class EndpointRepository @Inject constructor(
             AppResult.Failure(AppError.Unexpected(message))
         }
     }
+
+    /**
+     * Cleans up the mistakes that are easy to make when pasting a key.
+     *
+     * Copying a `Authorization: Bearer sk-...` header wholesale, or copying a key out of a JSON
+     * config with its quotes attached, produces a value that looks fine in the field and is
+     * rejected by every provider. Normalising here costs nothing and turns a baffling 401 into a
+     * working setup.
+     */
+    private fun normaliseKey(raw: String): String = raw
+        .trim()
+        .removeSurrounding("\"")
+        .removeSurrounding("'")
+        .removePrefix("Bearer ")
+        .removePrefix("bearer ")
+        .removePrefix("Authorization: ")
+        .trim()
 
     /**
      * Writes a freshly discovered model list.

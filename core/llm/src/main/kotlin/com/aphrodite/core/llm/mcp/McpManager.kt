@@ -55,7 +55,13 @@ class McpManager @Inject constructor(
     ): String {
         val id = UUID.randomUUID().toString()
         val authRef = bearerToken?.takeIf { it.isNotBlank() }?.let { token ->
-            "mcp:$id".also { secretStore.put(it, token) }
+            // Same paste mistakes as provider keys: strip a copied "Bearer " prefix.
+            val cleaned = token.trim()
+                .removeSurrounding("\"")
+                .removePrefix("Bearer ")
+                .removePrefix("bearer ")
+                .trim()
+            "mcp:$id".also { secretStore.put(it, cleaned) }
         }
         dao.upsertServer(
             McpServerEntity(
