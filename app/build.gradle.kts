@@ -36,6 +36,7 @@ dependencies {
     implementation(project(":feature:auth"))
     implementation(project(":feature:chat"))
     implementation(project(":feature:notes"))
+    implementation(project(":feature:tasks"))
     implementation(project(":feature:settings"))
 
     implementation(platform(libs.compose.bom))

@@ -15,5 +15,6 @@ dependencies {
     implementation(project(":core:designsystem"))
     implementation(project(":core:adaptive"))
     implementation(project(":core:database"))
+    implementation(project(":core:llm"))
     implementation(project(":core:notifications"))
 }

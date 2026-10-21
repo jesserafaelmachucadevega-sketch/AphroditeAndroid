@@ -26,6 +26,8 @@ import com.aphrodite.designsystem.components.AphroditeTopBar
 import com.aphrodite.designsystem.theme.AphroditeThemes
 import com.aphrodite.feature.notes.NotesScreen
 import com.aphrodite.feature.notes.NotesViewModel
+import com.aphrodite.feature.tasks.TasksScreen
+import com.aphrodite.feature.tasks.TasksViewModel
 import com.aphrodite.feature.settings.AppearanceHandlers
 import com.aphrodite.feature.settings.AppearanceState
 import com.aphrodite.feature.settings.BuildInfo
@@ -43,11 +45,13 @@ fun AphroditeNavHost(
     chatViewModel: ChatViewModel = hiltViewModel(),
     settingsViewModel: SettingsViewModel = hiltViewModel(),
     notesViewModel: NotesViewModel = hiltViewModel(),
+    tasksViewModel: TasksViewModel = hiltViewModel(),
 ) {
     val preferences by viewModel.state.collectAsStateWithLifecycle()
     val chatState by chatViewModel.state.collectAsStateWithLifecycle()
     val servicesState by settingsViewModel.services.collectAsStateWithLifecycle()
     val notesState by notesViewModel.state.collectAsStateWithLifecycle()
+    val tasksState by tasksViewModel.state.collectAsStateWithLifecycle()
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route ?: Routes.SETTINGS
@@ -118,6 +122,20 @@ fun AphroditeNavHost(
                     onToggleModelPicker = chatViewModel::toggleModelPicker,
                     onModelQueryChange = chatViewModel::onModelQueryChange,
                     onSelectModel = chatViewModel::selectModel,
+                )
+            }
+            composable(Routes.TASKS) {
+                TasksScreen(
+                    state = tasksState,
+                    onAdd = tasksViewModel::startAdd,
+                    onEdit = tasksViewModel::startEdit,
+                    onDelete = tasksViewModel::delete,
+                    onToggleEnabled = tasksViewModel::setEnabled,
+                    onRun = tasksViewModel::run,
+                    onDraftChange = tasksViewModel::onDraftChange,
+                    onCancelEdit = tasksViewModel::cancelEdit,
+                    onSave = tasksViewModel::save,
+                    onDismiss = tasksViewModel::dismiss,
                 )
             }
             composable(Routes.NOTES) {
