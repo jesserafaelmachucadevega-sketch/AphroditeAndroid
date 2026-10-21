@@ -24,6 +24,8 @@ import com.aphrodite.core.adaptive.LocalDeviceProfile
 import com.aphrodite.core.datastore.AppPreferences
 import com.aphrodite.designsystem.components.AphroditeTopBar
 import com.aphrodite.designsystem.theme.AphroditeThemes
+import com.aphrodite.feature.notes.NotesScreen
+import com.aphrodite.feature.notes.NotesViewModel
 import com.aphrodite.feature.settings.AppearanceHandlers
 import com.aphrodite.feature.settings.AppearanceState
 import com.aphrodite.feature.settings.BuildInfo
@@ -40,10 +42,12 @@ fun AphroditeNavHost(
     viewModel: AppViewModel,
     chatViewModel: ChatViewModel = hiltViewModel(),
     settingsViewModel: SettingsViewModel = hiltViewModel(),
+    notesViewModel: NotesViewModel = hiltViewModel(),
 ) {
     val preferences by viewModel.state.collectAsStateWithLifecycle()
     val chatState by chatViewModel.state.collectAsStateWithLifecycle()
     val servicesState by settingsViewModel.services.collectAsStateWithLifecycle()
+    val notesState by notesViewModel.state.collectAsStateWithLifecycle()
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route ?: Routes.SETTINGS
@@ -114,6 +118,30 @@ fun AphroditeNavHost(
                     onToggleModelPicker = chatViewModel::toggleModelPicker,
                     onModelQueryChange = chatViewModel::onModelQueryChange,
                     onSelectModel = chatViewModel::selectModel,
+                )
+            }
+            composable(Routes.NOTES) {
+                NotesScreen(
+                    state = notesState,
+                    onQueryChange = notesViewModel::onQueryChange,
+                    onToggleArchived = notesViewModel::toggleArchivedView,
+                    onNewNote = notesViewModel::newNote,
+                    onNewChecklist = notesViewModel::newChecklist,
+                    onEdit = notesViewModel::edit,
+                    onDelete = notesViewModel::delete,
+                    onTogglePin = notesViewModel::togglePinned,
+                    onSetArchived = notesViewModel::setArchived,
+                    onCloseEditor = notesViewModel::closeEditor,
+                    onTitleChange = notesViewModel::onTitleChange,
+                    onBodyChange = notesViewModel::onBodyChange,
+                    onColorChange = notesViewModel::onColorChange,
+                    onTogglePinnedDraft = notesViewModel::togglePinned,
+                    onToggleArchivedDraft = notesViewModel::toggleArchived,
+                    onAddItem = notesViewModel::addItem,
+                    onUpdateItem = notesViewModel::updateItem,
+                    onToggleItem = notesViewModel::toggleItem,
+                    onRemoveItem = notesViewModel::removeItem,
+                    onSave = notesViewModel::save,
                 )
             }
             composable(Routes.SETTINGS) {

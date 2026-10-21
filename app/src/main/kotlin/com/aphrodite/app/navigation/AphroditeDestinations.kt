@@ -49,6 +49,13 @@ val aphroditeDestinations: List<AphroditeDestination> = listOf(
         inBottomBar = true,
     ),
     AphroditeDestination(
+        route = Routes.NOTES,
+        label = "Notes",
+        icon = AphroditeIcons.Notes,
+        section = Sections.TOOLS,
+        inBottomBar = true,
+    ),
+    AphroditeDestination(
         route = Routes.SETTINGS,
         label = "Settings",
         icon = AphroditeIcons.Settings,
