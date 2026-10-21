@@ -301,6 +301,22 @@ private fun EndpointRow(
                     maxLines = 1,
                     overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                 )
+                // Whether a credential is actually stored is not otherwise visible, which makes
+                // a rejected key look like a broken provider.
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = if (endpoint.apiKeyRef != null) AphroditeIcons.Key else AphroditeIcons.Unlock,
+                        contentDescription = null,
+                        tint = if (endpoint.apiKeyRef != null) colors.colorSuccess else colors.colorWarning,
+                        modifier = Modifier.size(10.dp),
+                    )
+                    Box(Modifier.size(AphroditeSpacing.xs))
+                    Text(
+                        text = if (endpoint.apiKeyRef != null) "Key stored" else "No key stored",
+                        color = if (endpoint.apiKeyRef != null) colors.colorSuccess else colors.colorWarning,
+                        style = androidx.compose.material3.MaterialTheme.typography.labelSmall,
+                    )
+                }
                 endpoint.lastError?.let { error ->
                     Text(
                         text = error,

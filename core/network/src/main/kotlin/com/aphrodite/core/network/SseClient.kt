@@ -20,6 +20,16 @@ data class SseFrame(val event: String?, val data: String)
 class SseException(message: String, cause: Throwable? = null) : IOException(message, cause)
 
 /**
+ * Raised when the server answered the stream request with a non-success status.
+ *
+ * The status is carried explicitly because callers need it to say something useful — a 401 means
+ * "fix your key", a 404 means "fix your URL" — and flattening it into a generic IOException loses
+ * the only part that tells the user what to do.
+ */
+class SseHttpException(val status: Int, val body: String) :
+    IOException("HTTP $status: ${body.take(300)}")
+
+/**
  * Reads `text/event-stream` responses as a flow of frames.
  *
  * Implements the parts of the event-stream format the providers actually use: `data:` and
@@ -47,7 +57,7 @@ class SseClient(private val client: OkHttpClient) {
                 response.use { res ->
                     if (!res.isSuccessful) {
                         val body = runCatching { res.body?.string().orEmpty() }.getOrDefault("")
-                        close(SseException("HTTP ${res.code}: ${body.take(500)}"))
+                        close(SseHttpException(res.code, body))
                         return
                     }
                     val source = res.body?.source()

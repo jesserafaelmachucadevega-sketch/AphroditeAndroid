@@ -63,8 +63,11 @@ class LlmClient @Inject constructor(
         } catch (e: CancellationException) {
             emit(LlmEvent.Cancelled)
             throw e
+        } catch (e: com.aphrodite.core.network.SseHttpException) {
+            // Keep the status: it is what tells the UI whether to blame the key or the URL.
+            emit(LlmEvent.Failed(e.body.ifBlank { "The provider returned HTTP ${e.status}" }, e.status))
         } catch (e: ProviderHttpException) {
-            emit(LlmEvent.Failed(e.body.ifBlank { "Provider returned HTTP ${e.status}" }, e.status))
+            emit(LlmEvent.Failed(e.body.ifBlank { "The provider returned HTTP ${e.status}" }, e.status))
         } catch (e: Exception) {
             emit(LlmEvent.Failed(e.message ?: "The request failed"))
         }
