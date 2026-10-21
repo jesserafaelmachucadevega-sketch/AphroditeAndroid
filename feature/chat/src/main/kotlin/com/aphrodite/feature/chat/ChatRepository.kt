@@ -192,9 +192,13 @@ class ChatRepository @Inject constructor(
         val history = messageDao.forSession(sessionId).takeLast(historyLimit)
 
         val messages = buildList {
-            preset?.systemPrompt?.takeIf { it.isNotBlank() }?.let {
-                add(LlmMessage(role = LlmRole.System, content = it))
-            }
+            // The constitution always leads, so a persona cannot override the operational rules.
+            add(
+                LlmMessage(
+                    role = LlmRole.System,
+                    content = com.aphrodite.core.llm.SystemConstitution.compose(preset?.systemPrompt),
+                ),
+            )
             history.forEach { entry ->
                 add(
                     LlmMessage(

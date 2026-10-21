@@ -6,6 +6,7 @@ import com.aphrodite.core.database.entity.ChatMessageEntity
 import com.aphrodite.core.database.entity.MessageRole
 import com.aphrodite.core.database.entity.SessionEntity
 import com.aphrodite.core.llm.LlmClient
+import com.aphrodite.core.llm.ScratchpadExtractor
 import com.aphrodite.core.llm.stream.LlmEvent
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -203,7 +204,9 @@ class ChatViewModel @Inject constructor(
                 when (event) {
                     is LlmEvent.Delta -> {
                         answer.append(event.text)
-                        _state.update { it.copy(streamingText = answer.toString()) }
+                        _state.update {
+                            it.copy(streamingText = ScratchpadExtractor.visibleOnly(answer.toString()))
+                        }
                     }
 
                     is LlmEvent.Thinking -> {
@@ -215,7 +218,9 @@ class ChatViewModel @Inject constructor(
                         // A complete replacement supersedes whatever was streamed.
                         answer.clear()
                         answer.append(event.content)
-                        _state.update { it.copy(streamingText = answer.toString()) }
+                        _state.update {
+                            it.copy(streamingText = ScratchpadExtractor.visibleOnly(answer.toString()))
+                        }
                     }
 
                     is LlmEvent.Metrics -> {
@@ -231,14 +236,22 @@ class ChatViewModel @Inject constructor(
                 }
             }
 
-            val text = answer.toString()
+            // The constitution asks the model to think in <scratchpad> and <reflection> tags.
+            // Those are working notes, so they are lifted out of the reply and into the
+            // collapsible reasoning panel rather than rendered as the answer.
+            val parsed = ScratchpadExtractor.parse(answer.toString())
+            val combinedThinking = listOfNotNull(
+                thinking.toString().ifBlank { null },
+                parsed.working.ifBlank { null },
+            ).joinToString("\n\n")
+
             when {
-                text.isNotBlank() -> {
+                parsed.visible.isNotBlank() -> {
                     repository.append(
                         sessionId = session.id,
                         role = MessageRole.Assistant,
-                        content = text,
-                        thinking = thinking.toString().ifBlank { null },
+                        content = parsed.visible,
+                        thinking = combinedThinking.ifBlank { null },
                         model = request.model,
                     )
                 }
