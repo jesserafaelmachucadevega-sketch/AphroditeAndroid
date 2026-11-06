@@ -26,8 +26,22 @@ data class AccountDraft(
     val imapUsername: String = "",
     val password: String = "",
     val hasStoredPassword: Boolean = false,
+    val smtpHost: String = "",
+    val smtpPort: String = "587",
+    val smtpSecurity: String = "starttls",
+    val smtpUsername: String = "",
 ) {
     val isNew: Boolean get() = id == null
+}
+
+/** A message being written. */
+data class ComposeDraft(
+    val to: String = "",
+    val subject: String = "",
+    val body: String = "",
+    val inReplyTo: String? = null,
+) {
+    val canSend: Boolean get() = to.isNotBlank() && body.isNotBlank()
 }
 
 data class EmailUiState(
@@ -38,21 +52,23 @@ data class EmailUiState(
     val messages: List<EmailHeader> = emptyList(),
     val openMessage: EmailBody? = null,
     val draft: AccountDraft? = null,
+    val compose: ComposeDraft? = null,
     val loading: Boolean = false,
     val error: String? = null,
     val notice: String? = null,
 )
 
 /**
- * Email: accounts and the IMAP read path.
+ * Email: accounts, the IMAP read path and SMTP send.
  *
- * Sending is not wired yet — there is no SMTP code behind the compose button — so this view model
- * deliberately exposes no compose action rather than a button that cannot work.
+ * Body and recipient are validated before a connection is opened, so a typo does not cost a round
+ * trip to the mail server.
  */
 @HiltViewModel
 class EmailViewModel @Inject constructor(
     private val dao: EmailDao,
     private val imap: ImapClient,
+    private val smtp: SmtpClient,
     private val secrets: SecretStore,
 ) : ViewModel() {
 
@@ -83,6 +99,10 @@ class EmailViewModel @Inject constructor(
                 imapSecurity = account.imapSecurity,
                 imapUsername = account.imapUsername,
                 hasStoredPassword = account.imapPasswordRef != null,
+                smtpHost = account.smtpHost.orEmpty(),
+                smtpPort = account.smtpPort.toString(),
+                smtpSecurity = account.smtpSecurity,
+                smtpUsername = account.smtpUsername.orEmpty(),
             ),
             error = null,
         )
@@ -148,10 +168,10 @@ class EmailViewModel @Inject constructor(
                     imapSecurity = draft.imapSecurity,
                     imapUsername = draft.imapUsername.trim(),
                     imapPasswordRef = ref,
-                    smtpHost = existing?.smtpHost,
-                    smtpPort = existing?.smtpPort ?: 587,
-                    smtpSecurity = existing?.smtpSecurity ?: "starttls",
-                    smtpUsername = existing?.smtpUsername,
+                    smtpHost = draft.smtpHost.trim().takeIf { it.isNotBlank() },
+                    smtpPort = draft.smtpPort.toIntOrNull() ?: 587,
+                    smtpSecurity = draft.smtpSecurity,
+                    smtpUsername = draft.smtpUsername.trim().takeIf { it.isNotBlank() },
                     smtpPasswordRef = existing?.smtpPasswordRef,
                     enabled = true,
                     isDefault = existing?.isDefault ?: (dao.defaultAccount() == null),
@@ -233,6 +253,86 @@ class EmailViewModel @Inject constructor(
     }
 
     fun closeMessage() = _state.update { it.copy(openMessage = null) }
+
+    // ── Compose ──────────────────────────────────────────────────────────────
+
+    /** Starts a new message, or a reply pre-filled from [replyTo]. */
+    fun startCompose(replyTo: EmailBody? = null) = _state.update {
+        it.copy(
+            compose = if (replyTo == null) {
+                ComposeDraft()
+            } else {
+                ComposeDraft(
+                    to = replyTo.header.from,
+                    subject = if (replyTo.header.subject.startsWith("Re:", ignoreCase = true)) {
+                        replyTo.header.subject
+                    } else {
+                        "Re: ${replyTo.header.subject}"
+                    },
+                    body = "\n\n———\n${replyTo.text.take(2000)}",
+                    inReplyTo = replyTo.header.uid,
+                )
+            },
+            openMessage = null,
+            error = null,
+            notice = null,
+        )
+    }
+
+    fun onComposeChange(draft: ComposeDraft) = _state.update { it.copy(compose = draft) }
+
+    fun cancelCompose() = _state.update { it.copy(compose = null) }
+
+    fun send() {
+        val draft = _state.value.compose ?: return
+        val account = _state.value.activeAccount ?: return
+        if (!draft.canSend) {
+            _state.update { it.copy(error = "A recipient and a body are required.") }
+            return
+        }
+        if (account.smtpHost.isNullOrBlank()) {
+            _state.update {
+                it.copy(error = "This account has no SMTP host. Add one in the account settings.")
+            }
+            return
+        }
+
+        toggleLoading(true)
+        viewModelScope.launch {
+            val password = account.imapPasswordRef?.let { secrets.get(it) }
+            if (password == null) {
+                _state.update { it.copy(loading = false, error = "No password stored.") }
+                return@launch
+            }
+
+            val recipients = draft.to
+                .split(',', ';')
+                .map { it.trim() }
+                .filter { it.isNotEmpty() && it.contains('@') }
+            if (recipients.isEmpty()) {
+                _state.update { it.copy(loading = false, error = "No valid recipient address.") }
+                return@launch
+            }
+
+            val result = smtp.send(
+                account = account,
+                password = password,
+                to = recipients,
+                subject = draft.subject,
+                body = draft.body,
+                inReplyTo = draft.inReplyTo,
+            )
+
+            _state.update {
+                it.copy(
+                    loading = false,
+                    compose = if (result.isSuccess) null else it.compose,
+                    notice = if (result.isSuccess) "Message sent." else null,
+                    error = result.exceptionOrNull()?.let { failure -> describe(failure) },
+                )
+            }
+        }
+    }
 
     fun dismiss() = _state.update { it.copy(error = null, notice = null) }
 

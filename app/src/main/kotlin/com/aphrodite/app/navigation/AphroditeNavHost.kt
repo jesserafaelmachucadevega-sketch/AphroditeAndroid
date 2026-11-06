@@ -167,6 +167,11 @@ fun AphroditeNavHost(
                     onSaveAccount = emailViewModel::saveAccount,
                     onOpenMessage = emailViewModel::open,
                     onCloseMessage = emailViewModel::closeMessage,
+                    onCompose = { emailViewModel.startCompose() },
+                    onReply = { body -> emailViewModel.startCompose(body) },
+                    onComposeChange = emailViewModel::onComposeChange,
+                    onCancelCompose = emailViewModel::cancelCompose,
+                    onSend = emailViewModel::send,
                     onRefresh = {
                         emailState.activeAccount?.let { emailViewModel.loadMessages(it.id, emailState.folder) }
                     },

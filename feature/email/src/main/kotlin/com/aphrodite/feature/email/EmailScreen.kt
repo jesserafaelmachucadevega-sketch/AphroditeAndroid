@@ -69,6 +69,11 @@ fun EmailScreen(
     onSaveAccount: () -> Unit,
     onOpenMessage: (EmailHeader) -> Unit,
     onCloseMessage: () -> Unit,
+    onCompose: () -> Unit,
+    onReply: (com.aphrodite.core.database.entity.EmailBody) -> Unit,
+    onComposeChange: (ComposeDraft) -> Unit,
+    onCancelCompose: () -> Unit,
+    onSend: () -> Unit,
     onRefresh: () -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
@@ -105,6 +110,13 @@ fun EmailScreen(
                 Box(Modifier.size(AphroditeSpacing.sm))
             }
             if (state.openMessage == null) {
+                AphroditeIconButton(
+                    icon = AphroditeIcons.Edit,
+                    contentDescription = "Compose",
+                    onClick = onCompose,
+                    size = 28.dp,
+                    enabled = state.activeAccount != null,
+                )
                 AphroditeIconButton(
                     icon = AphroditeIcons.Refresh,
                     contentDescription = "Refresh",
@@ -147,6 +159,14 @@ fun EmailScreen(
         }
 
         when {
+            state.compose != null -> ComposeForm(
+                draft = state.compose,
+                onChange = onComposeChange,
+                onCancel = onCancelCompose,
+                onSend = onSend,
+                loading = state.loading,
+            )
+
             state.draft != null -> AccountForm(
                 draft = state.draft,
                 onChange = onDraftChange,
@@ -159,6 +179,7 @@ fun EmailScreen(
             state.openMessage != null -> Reader(
                 state = state,
                 onClose = onCloseMessage,
+                onReply = onReply,
             )
 
             state.accounts.isEmpty() -> AphroditeEmptyState(
@@ -315,7 +336,11 @@ private fun MessageRow(header: EmailHeader, onClick: () -> Unit) {
 }
 
 @Composable
-private fun Reader(state: EmailUiState, onClose: () -> Unit) {
+private fun Reader(
+    state: EmailUiState,
+    onClose: () -> Unit,
+    onReply: (com.aphrodite.core.database.entity.EmailBody) -> Unit,
+) {
     val colors = aphroditeColors
     val body = state.openMessage ?: return
     Column(
@@ -324,11 +349,21 @@ private fun Reader(state: EmailUiState, onClose: () -> Unit) {
             .verticalScroll(rememberScrollState())
             .padding(AphroditeSpacing.lg),
     ) {
-        Text(
-            text = body.header.subject,
-            color = colors.fg,
-            style = androidx.compose.material3.MaterialTheme.typography.headlineSmall,
-        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = body.header.subject,
+                color = colors.fg,
+                style = androidx.compose.material3.MaterialTheme.typography.headlineSmall,
+                modifier = Modifier.weight(1f),
+            )
+            AphroditeIconButton(
+                icon = AphroditeIcons.Send,
+                contentDescription = "Reply",
+                onClick = { onReply(body) },
+                size = 30.dp,
+                tint = colors.accentPrimary,
+            )
+        }
         Box(Modifier.size(AphroditeSpacing.sm))
         Text(
             text = body.header.from,
@@ -359,6 +394,56 @@ private fun Reader(state: EmailUiState, onClose: () -> Unit) {
                     modifier = Modifier.padding(vertical = 2.dp),
                 )
             }
+        }
+        Box(Modifier.size(AphroditeSpacing.huge))
+    }
+}
+
+@Composable
+private fun ComposeForm(
+    draft: ComposeDraft,
+    onChange: (ComposeDraft) -> Unit,
+    onCancel: () -> Unit,
+    onSend: () -> Unit,
+    loading: Boolean,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(AphroditeSpacing.lg),
+        verticalArrangement = Arrangement.spacedBy(AphroditeSpacing.md),
+    ) {
+        AphroditeSectionHeader(title = "New message", icon = AphroditeIcons.Edit)
+        AphroditeTextField(
+            value = draft.to,
+            onValueChange = { onChange(draft.copy(to = it)) },
+            placeholder = "To (comma separated)",
+            leadingIcon = AphroditeIcons.User,
+        )
+        AphroditeTextField(
+            value = draft.subject,
+            onValueChange = { onChange(draft.copy(subject = it)) },
+            placeholder = "Subject",
+            leadingIcon = AphroditeIcons.Type,
+        )
+        AphroditeTextField(
+            value = draft.body,
+            onValueChange = { onChange(draft.copy(body = it)) },
+            placeholder = "Message",
+            leadingIcon = AphroditeIcons.Notes,
+            singleLine = false,
+            minHeight = 220.dp,
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(AphroditeSpacing.sm)) {
+            AphroditeButton(
+                text = "Send",
+                onClick = onSend,
+                icon = AphroditeIcons.Send,
+                loading = loading,
+                enabled = draft.canSend,
+            )
+            AphroditeButton(text = "Discard", onClick = onCancel, style = AphroditeButtonStyle.Secondary)
         }
         Box(Modifier.size(AphroditeSpacing.huge))
     }
@@ -436,6 +521,56 @@ private fun AccountForm(
                             RoundedCornerShape(AphroditeRadius.xs),
                         )
                         .clickable(role = Role.RadioButton) { onChange(draft.copy(imapSecurity = value)) }
+                        .padding(horizontal = AphroditeSpacing.md, vertical = AphroditeSpacing.sm),
+                ) {
+                    Text(
+                        text = label,
+                        color = if (selected) aphroditeColors.accentPrimary else aphroditeColors.fg,
+                        style = androidx.compose.material3.MaterialTheme.typography.labelSmall,
+                    )
+                }
+            }
+        }
+
+        Text(
+            text = "Outgoing (SMTP)",
+            color = aphroditeColors.fg,
+            style = androidx.compose.material3.MaterialTheme.typography.titleSmall,
+        )
+        AphroditeTextField(
+            value = draft.smtpHost,
+            onValueChange = { onChange(draft.copy(smtpHost = it)) },
+            placeholder = "SMTP host, e.g. smtp.gmail.com",
+            leadingIcon = AphroditeIcons.Server,
+        )
+        AphroditeTextField(
+            value = draft.smtpPort,
+            onValueChange = { onChange(draft.copy(smtpPort = it.filter(Char::isDigit))) },
+            placeholder = "SMTP port (587)",
+            leadingIcon = AphroditeIcons.Tag,
+        )
+        AphroditeTextField(
+            value = draft.smtpUsername,
+            onValueChange = { onChange(draft.copy(smtpUsername = it)) },
+            placeholder = "SMTP username (defaults to the IMAP one)",
+            leadingIcon = AphroditeIcons.User,
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(AphroditeSpacing.sm)) {
+            listOf("starttls" to "STARTTLS", "ssl" to "SSL", "none" to "None").forEach { (value, label) ->
+                val selected = draft.smtpSecurity == value
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(AphroditeRadius.xs))
+                        .background(
+                            if (selected) aphroditeColors.accentPrimary.copy(alpha = 0.2f)
+                            else aphroditeColors.toggleBg,
+                        )
+                        .border(
+                            1.dp,
+                            if (selected) aphroditeColors.accentPrimary else aphroditeColors.border,
+                            RoundedCornerShape(AphroditeRadius.xs),
+                        )
+                        .clickable(role = Role.RadioButton) { onChange(draft.copy(smtpSecurity = value)) }
                         .padding(horizontal = AphroditeSpacing.md, vertical = AphroditeSpacing.sm),
                 ) {
                     Text(
