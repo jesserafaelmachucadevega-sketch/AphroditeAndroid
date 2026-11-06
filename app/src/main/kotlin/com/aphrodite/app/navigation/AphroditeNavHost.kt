@@ -155,6 +155,7 @@ fun AphroditeNavHost(
                     onTitleChange = notesViewModel::onTitleChange,
                     onBodyChange = notesViewModel::onBodyChange,
                     onColorChange = notesViewModel::onColorChange,
+                    onReminderChange = notesViewModel::onReminderChange,
                     onTogglePinnedDraft = notesViewModel::togglePinned,
                     onToggleArchivedDraft = notesViewModel::toggleArchived,
                     onAddItem = notesViewModel::addItem,

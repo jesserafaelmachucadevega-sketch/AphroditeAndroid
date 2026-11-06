@@ -3,6 +3,7 @@ package com.aphrodite.feature.notes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,6 +22,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -72,6 +74,7 @@ fun NotesScreen(
     onTitleChange: (String) -> Unit,
     onBodyChange: (String) -> Unit,
     onColorChange: (String?) -> Unit,
+    onReminderChange: (Long?) -> Unit,
     onTogglePinnedDraft: () -> Unit,
     onToggleArchivedDraft: () -> Unit,
     onAddItem: () -> Unit,
@@ -113,6 +116,7 @@ fun NotesScreen(
                     onTitleChange = onTitleChange,
                     onBodyChange = onBodyChange,
                     onColorChange = onColorChange,
+                    onReminderChange = onReminderChange,
                     onTogglePinned = onTogglePinnedDraft,
                     onToggleArchived = onToggleArchivedDraft,
                     onAddItem = onAddItem,
@@ -308,6 +312,7 @@ private fun NoteEditor(
     onTitleChange: (String) -> Unit,
     onBodyChange: (String) -> Unit,
     onColorChange: (String?) -> Unit,
+    onReminderChange: (Long?) -> Unit,
     onTogglePinned: () -> Unit,
     onToggleArchived: () -> Unit,
     onAddItem: () -> Unit,
@@ -406,6 +411,8 @@ private fun NoteEditor(
             }
 
             Box(Modifier.size(AphroditeSpacing.md))
+            ReminderRow(current = draft.reminderAt, onChange = onReminderChange)
+            Box(Modifier.size(AphroditeSpacing.md))
             AphroditeDivider()
             Box(Modifier.size(AphroditeSpacing.md))
 
@@ -501,6 +508,84 @@ private fun NoteEditor(
         }
     }
 }
+
+/**
+ * Reminder picker.
+ *
+ * Quick offsets rather than a date/time dialog: a note reminder is almost always "later today" or
+ * "tomorrow morning", and two taps is the difference between using this and not bothering.
+ */
+@Composable
+private fun ReminderRow(current: Long?, onChange: (Long?) -> Unit) {
+    val colors = aphroditeColors
+    val options = remember {
+        listOf(
+            "None" to 0L,
+            "1 hour" to 60L * 60_000L,
+            "3 hours" to 3 * 60L * 60_000L,
+            "Tomorrow 9am" to -1L,
+            "Next week" to 7 * 24 * 60L * 60_000L,
+        )
+    }
+
+    Column {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                imageVector = AphroditeIcons.Bell,
+                contentDescription = null,
+                tint = if (current != null) colors.accentPrimary else colors.colorMuted,
+                modifier = Modifier.size(12.dp),
+            )
+            Box(Modifier.size(AphroditeSpacing.xs))
+            Text(
+                text = current?.let { "Reminder set: ${formatReminder(it)}" } ?: "No reminder",
+                color = if (current != null) colors.accentPrimary else colors.colorMuted,
+                style = androidx.compose.material3.MaterialTheme.typography.labelSmall,
+            )
+        }
+        Box(Modifier.size(AphroditeSpacing.sm))
+        Row(
+            modifier = Modifier.horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(AphroditeSpacing.sm),
+        ) {
+            options.forEach { (label, offset) ->
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(AphroditeRadius.xs))
+                        .background(colors.toggleBg)
+                        .border(1.dp, colors.border, RoundedCornerShape(AphroditeRadius.xs))
+                        .clickable(role = Role.Button) {
+                            onChange(if (offset == 0L) null else resolveReminder(offset))
+                        }
+                        .padding(horizontal = AphroditeSpacing.md, vertical = AphroditeSpacing.sm),
+                ) {
+                    Text(
+                        text = label,
+                        color = colors.fg,
+                        style = androidx.compose.material3.MaterialTheme.typography.labelSmall,
+                    )
+                }
+            }
+        }
+    }
+}
+
+/** Turns an offset into an absolute time. `-1` means tomorrow at 09:00 local time. */
+private fun resolveReminder(offsetMillis: Long): Long {
+    if (offsetMillis != -1L) return System.currentTimeMillis() + offsetMillis
+    val calendar = java.util.Calendar.getInstance().apply {
+        add(java.util.Calendar.DAY_OF_YEAR, 1)
+        set(java.util.Calendar.HOUR_OF_DAY, 9)
+        set(java.util.Calendar.MINUTE, 0)
+        set(java.util.Calendar.SECOND, 0)
+        set(java.util.Calendar.MILLISECOND, 0)
+    }
+    return calendar.timeInMillis
+}
+
+private fun formatReminder(atMillis: Long): String =
+    java.text.SimpleDateFormat("d MMM, HH:mm", java.util.Locale.getDefault())
+        .format(java.util.Date(atMillis))
 
 /** Parses a `#RRGGBB` note colour, falling back to the muted border tone. */
 private fun parseColor(hex: String): Color = runCatching {

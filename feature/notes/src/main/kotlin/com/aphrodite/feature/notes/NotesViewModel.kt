@@ -26,6 +26,7 @@ data class NoteDraft(
     val pinned: Boolean = false,
     val archived: Boolean = false,
     val items: List<NoteItem> = emptyList(),
+    val reminderAt: Long? = null,
 ) {
     val isNew: Boolean get() = id == null
 }
@@ -58,6 +59,7 @@ data class NotesUiState(
 @HiltViewModel
 class NotesViewModel @Inject constructor(
     private val noteDao: NoteDao,
+    private val reminders: com.aphrodite.core.notifications.NoteReminderScheduler,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(NotesUiState())
@@ -101,6 +103,7 @@ class NotesViewModel @Inject constructor(
                         pinned = note.pinned,
                         archived = note.archived,
                         items = items,
+                        reminderAt = note.reminderAt,
                     ),
                 )
             }
@@ -117,6 +120,9 @@ class NotesViewModel @Inject constructor(
     fun onBodyChange(value: String) = updateDraft { it.copy(body = value) }
 
     fun onColorChange(color: String?) = updateDraft { it.copy(color = color) }
+
+    /** Sets or clears the reminder. The alarm is scheduled on save, not here. */
+    fun onReminderChange(atMillis: Long?) = updateDraft { it.copy(reminderAt = atMillis) }
 
     fun togglePinned() = updateDraft { it.copy(pinned = !it.pinned) }
 
@@ -158,7 +164,7 @@ class NotesViewModel @Inject constructor(
                     pinned = draft.pinned,
                     archived = draft.archived,
                     sortOrder = existing?.sortOrder ?: 0,
-                    reminderAt = existing?.reminderAt,
+                    reminderAt = draft.reminderAt,
                     recurrenceRule = existing?.recurrenceRule,
                     goalTarget = existing?.goalTarget,
                     goalProgress = existing?.goalProgress ?: 0,
@@ -178,12 +184,23 @@ class NotesViewModel @Inject constructor(
                     )
                 }.filter { it.text.isNotBlank() },
             )
+            // The alarm is scheduled after the write so a failed save cannot leave a reminder
+            // pointing at a note that does not exist.
+            val at = draft.reminderAt
+            if (at != null) {
+                reminders.schedule(id, draft.title.ifBlank { "Note reminder" }, at)
+            } else {
+                reminders.cancel(id)
+            }
             _state.update { it.copy(draft = null) }
         }
     }
 
     fun delete(noteId: String) {
-        viewModelScope.launch { noteDao.delete(noteId) }
+        viewModelScope.launch {
+            reminders.cancel(noteId)
+            noteDao.delete(noteId)
+        }
     }
 
     fun togglePinned(noteId: String, pinned: Boolean) {
