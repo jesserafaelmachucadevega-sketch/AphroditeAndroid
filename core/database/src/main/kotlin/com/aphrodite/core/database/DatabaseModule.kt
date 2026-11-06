@@ -83,4 +83,8 @@ object DatabaseModule {
     @Provides
     fun provideEmailDao(database: AphroditeDatabase): com.aphrodite.core.database.dao.EmailDao =
         database.emailDao()
+
+    @Provides
+    fun provideDocumentDao(database: AphroditeDatabase): com.aphrodite.core.database.dao.DocumentDao =
+        database.documentDao()
 }

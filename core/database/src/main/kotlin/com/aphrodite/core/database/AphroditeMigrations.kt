@@ -90,5 +90,43 @@ object AphroditeMigrations {
         }
     }
 
-    val ALL: Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3)
+    /** 3 → 4: documents and their embedded chunks. */
+    val MIGRATION_3_4 = object : Migration(3, 4) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                "CREATE TABLE IF NOT EXISTS `documents` (" +
+                    "`id` TEXT NOT NULL, " +
+                    "`title` TEXT NOT NULL, " +
+                    "`body` TEXT NOT NULL, " +
+                    "`mime` TEXT NOT NULL, " +
+                    "`indexed_at` INTEGER, " +
+                    "`chunk_count` INTEGER NOT NULL, " +
+                    "`embedding_model` TEXT, " +
+                    "`last_error` TEXT, " +
+                    "`created_at` INTEGER NOT NULL, " +
+                    "`updated_at` INTEGER NOT NULL, " +
+                    "PRIMARY KEY(`id`))",
+            )
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_documents_updated_at` ON `documents` (`updated_at`)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_documents_indexed_at` ON `documents` (`indexed_at`)")
+
+            db.execSQL(
+                "CREATE TABLE IF NOT EXISTS `document_chunks` (" +
+                    "`id` TEXT NOT NULL, " +
+                    "`document_id` TEXT NOT NULL, " +
+                    "`ordinal` INTEGER NOT NULL, " +
+                    "`text` TEXT NOT NULL, " +
+                    "`embedding` BLOB NOT NULL, " +
+                    "PRIMARY KEY(`id`), " +
+                    "FOREIGN KEY(`document_id`) REFERENCES `documents`(`id`) " +
+                    "ON UPDATE NO ACTION ON DELETE CASCADE )",
+            )
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_document_chunks_document_id` " +
+                    "ON `document_chunks` (`document_id`)",
+            )
+        }
+    }
+
+    val ALL: Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
 }
