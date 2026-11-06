@@ -16,6 +16,4 @@ dependencies {
     implementation(project(":core:adaptive"))
     implementation(project(":core:database"))
     implementation(project(":core:llm"))
-    implementation(project(":core:markdown"))
-    implementation(project(":feature:chat"))
 }

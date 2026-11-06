@@ -69,6 +69,12 @@ val aphroditeDestinations: List<AphroditeDestination> = listOf(
         section = Sections.TOOLS,
     ),
     AphroditeDestination(
+        route = Routes.COMPARE,
+        label = "Compare",
+        icon = AphroditeIcons.Compare,
+        section = Sections.TOOLS,
+    ),
+    AphroditeDestination(
         route = Routes.SPEECH,
         label = "Speech",
         icon = AphroditeIcons.Volume,

@@ -26,6 +26,8 @@ import com.aphrodite.designsystem.components.AphroditeTopBar
 import com.aphrodite.designsystem.theme.AphroditeThemes
 import com.aphrodite.feature.calendar.CalendarScreen
 import com.aphrodite.feature.calendar.CalendarViewModel
+import com.aphrodite.feature.compare.CompareScreen
+import com.aphrodite.feature.compare.CompareViewModel
 import com.aphrodite.feature.contacts.ContactsScreen
 import com.aphrodite.feature.contacts.ContactsViewModel
 import com.aphrodite.feature.documents.DocumentsScreen
@@ -70,6 +72,7 @@ fun AphroditeNavHost(
     skillsViewModel: SkillsViewModel = hiltViewModel(),
     searchViewModel: SearchViewModel = hiltViewModel(),
     speechViewModel: SpeechViewModel = hiltViewModel(),
+    compareViewModel: CompareViewModel = hiltViewModel(),
 ) {
     val preferences by viewModel.state.collectAsStateWithLifecycle()
     val chatState by chatViewModel.state.collectAsStateWithLifecycle()
@@ -86,6 +89,7 @@ fun AphroditeNavHost(
     val skillsState by skillsViewModel.state.collectAsStateWithLifecycle()
     val searchState by searchViewModel.state.collectAsStateWithLifecycle()
     val speechState by speechViewModel.state.collectAsStateWithLifecycle()
+    val compareState by compareViewModel.state.collectAsStateWithLifecycle()
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route ?: Routes.SETTINGS
@@ -171,6 +175,16 @@ fun AphroditeNavHost(
                     onCancelEdit = calendarViewModel::cancelEdit,
                     onSave = calendarViewModel::save,
                     onDismissError = calendarViewModel::dismissError,
+                )
+            }
+            composable(Routes.COMPARE) {
+                CompareScreen(
+                    state = compareState,
+                    onPromptChange = compareViewModel::onPromptChange,
+                    onToggleModel = compareViewModel::toggleModel,
+                    onRun = compareViewModel::run,
+                    onClear = compareViewModel::clearResults,
+                    onDismissError = compareViewModel::dismissError,
                 )
             }
             composable(Routes.SPEECH) {
