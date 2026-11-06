@@ -128,5 +128,30 @@ object AphroditeMigrations {
         }
     }
 
-    val ALL: Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+    /** 4 → 5: durable memories. */
+    val MIGRATION_4_5 = object : Migration(4, 5) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                "CREATE TABLE IF NOT EXISTS `memories` (" +
+                    "`id` TEXT NOT NULL, " +
+                    "`text` TEXT NOT NULL, " +
+                    "`category` TEXT NOT NULL, " +
+                    "`pinned` INTEGER NOT NULL, " +
+                    "`embedding` BLOB, " +
+                    "`source_session_id` TEXT, " +
+                    "`created_at` INTEGER NOT NULL, " +
+                    "`updated_at` INTEGER NOT NULL, " +
+                    "PRIMARY KEY(`id`))",
+            )
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_memories_category` ON `memories` (`category`)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_memories_pinned` ON `memories` (`pinned`)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_memories_created_at` ON `memories` (`created_at`)")
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_memories_source_session_id` " +
+                    "ON `memories` (`source_session_id`)",
+            )
+        }
+    }
+
+    val ALL: Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
 }

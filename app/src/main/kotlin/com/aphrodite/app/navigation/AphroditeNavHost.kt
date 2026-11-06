@@ -32,6 +32,8 @@ import com.aphrodite.feature.documents.DocumentsScreen
 import com.aphrodite.feature.documents.DocumentsViewModel
 import com.aphrodite.feature.email.EmailScreen
 import com.aphrodite.feature.email.EmailViewModel
+import com.aphrodite.feature.memory.MemoryScreen
+import com.aphrodite.feature.memory.MemoryViewModel
 import com.aphrodite.feature.notes.NotesScreen
 import com.aphrodite.feature.notes.NotesViewModel
 import com.aphrodite.feature.tasks.TasksScreen
@@ -58,6 +60,7 @@ fun AphroditeNavHost(
     contactsViewModel: ContactsViewModel = hiltViewModel(),
     emailViewModel: EmailViewModel = hiltViewModel(),
     documentsViewModel: DocumentsViewModel = hiltViewModel(),
+    memoryViewModel: MemoryViewModel = hiltViewModel(),
 ) {
     val preferences by viewModel.state.collectAsStateWithLifecycle()
     val chatState by chatViewModel.state.collectAsStateWithLifecycle()
@@ -70,6 +73,7 @@ fun AphroditeNavHost(
     val contactsState by contactsViewModel.state.collectAsStateWithLifecycle()
     val emailState by emailViewModel.state.collectAsStateWithLifecycle()
     val documentsState by documentsViewModel.state.collectAsStateWithLifecycle()
+    val memoryState by memoryViewModel.state.collectAsStateWithLifecycle()
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route ?: Routes.SETTINGS
@@ -155,6 +159,20 @@ fun AphroditeNavHost(
                     onCancelEdit = calendarViewModel::cancelEdit,
                     onSave = calendarViewModel::save,
                     onDismissError = calendarViewModel::dismissError,
+                )
+            }
+            composable(Routes.MEMORY) {
+                MemoryScreen(
+                    state = memoryState,
+                    onQueryChange = memoryViewModel::onQueryChange,
+                    onAdd = memoryViewModel::startAdd,
+                    onCancelAdd = memoryViewModel::cancelAdd,
+                    onDraftChange = memoryViewModel::onDraftChange,
+                    onCategoryChange = memoryViewModel::onCategoryChange,
+                    onSave = memoryViewModel::save,
+                    onTogglePin = memoryViewModel::togglePin,
+                    onDelete = memoryViewModel::delete,
+                    onDismissError = memoryViewModel::dismissError,
                 )
             }
             composable(Routes.DOCUMENTS) {

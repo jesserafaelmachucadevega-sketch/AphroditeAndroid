@@ -35,6 +35,7 @@ import javax.inject.Singleton
 class AgentLoop @Inject constructor(
     private val client: LlmClient,
     private val registry: ToolRegistry,
+    private val memories: com.aphrodite.core.database.dao.MemoryDao,
 ) {
     fun run(
         request: LlmRequest,
@@ -42,7 +43,17 @@ class AgentLoop @Inject constructor(
     ): Flow<LlmEvent> = flow {
         // The active preset's prompt replaces the constitution rather than adding to it; when
         // there is no preset the constitution itself is the prompt.
-        val systemPrompt = SystemConstitution.compose(request.persona, registry.inventory())
+        val systemPrompt = buildString {
+            append(SystemConstitution.compose(request.persona, registry.inventory()))
+            // Only pinned memories are sent every turn. Sending all of them would grow without
+            // bound and bury the answer; the rest stay reachable through search_memory.
+            val pinned = memories.pinned()
+            if (pinned.isNotEmpty()) {
+                append("\n\nWHAT YOU REMEMBER ABOUT THE USER\n")
+                append("These are facts from earlier conversations. Treat them as true.\n")
+                pinned.forEach { append("- [${it.category.label}] ${it.text}\n") }
+            }
+        }
         val conversation = mutableListOf<LlmMessage>()
         conversation += LlmMessage(role = LlmRole.System, content = systemPrompt)
         conversation += request.messages
