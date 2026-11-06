@@ -29,6 +29,8 @@ import com.aphrodite.feature.calendar.CalendarViewModel
 import com.aphrodite.feature.compare.CompareScreen
 import com.aphrodite.feature.compare.CompareViewModel
 import com.aphrodite.feature.contacts.ContactsScreen
+import com.aphrodite.feature.gallery.GalleryScreen
+import com.aphrodite.feature.gallery.GalleryViewModel
 import com.aphrodite.feature.contacts.ContactsViewModel
 import com.aphrodite.feature.documents.DocumentsScreen
 import com.aphrodite.feature.documents.DocumentsViewModel
@@ -73,6 +75,7 @@ fun AphroditeNavHost(
     searchViewModel: SearchViewModel = hiltViewModel(),
     speechViewModel: SpeechViewModel = hiltViewModel(),
     compareViewModel: CompareViewModel = hiltViewModel(),
+    galleryViewModel: GalleryViewModel = hiltViewModel(),
 ) {
     val preferences by viewModel.state.collectAsStateWithLifecycle()
     val chatState by chatViewModel.state.collectAsStateWithLifecycle()
@@ -90,6 +93,7 @@ fun AphroditeNavHost(
     val searchState by searchViewModel.state.collectAsStateWithLifecycle()
     val speechState by speechViewModel.state.collectAsStateWithLifecycle()
     val compareState by compareViewModel.state.collectAsStateWithLifecycle()
+    val galleryState by galleryViewModel.state.collectAsStateWithLifecycle()
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route ?: Routes.SETTINGS
@@ -175,6 +179,22 @@ fun AphroditeNavHost(
                     onCancelEdit = calendarViewModel::cancelEdit,
                     onSave = calendarViewModel::save,
                     onDismissError = calendarViewModel::dismissError,
+                )
+            }
+            composable(Routes.GALLERY) {
+                val permissionLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+                    androidx.activity.result.contract.ActivityResultContracts.RequestPermission(),
+                ) { granted -> galleryViewModel.onPermissionResult(granted) }
+                GalleryScreen(
+                    state = galleryState,
+                    onQueryChange = galleryViewModel::onQueryChange,
+                    onOpen = galleryViewModel::open,
+                    onClose = galleryViewModel::close,
+                    onDelete = galleryViewModel::delete,
+                    onPermissionResult = galleryViewModel::onPermissionResult,
+                    onRefresh = galleryViewModel::refresh,
+                    onDismissError = galleryViewModel::dismissError,
+                    onPermissionRequest = { permissionLauncher.launch(galleryViewModel.requiredPermission()) },
                 )
             }
             composable(Routes.COMPARE) {

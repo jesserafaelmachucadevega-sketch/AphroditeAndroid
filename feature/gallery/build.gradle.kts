@@ -17,4 +17,6 @@ dependencies {
     implementation(project(":core:database"))
     implementation(project(":core:llm"))
     implementation(project(":core:media"))
+    implementation(libs.coil.network.okhttp)
+    implementation(libs.coil.compose)
 }
