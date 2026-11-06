@@ -17,15 +17,17 @@ class SystemConstitutionTest {
     }
 
     @Test
-    fun `a persona is appended after the constitution`() {
+    fun `a supplied system prompt replaces the constitution`() {
+        // A preset is a replacement, not an addition: two sets of operating rules would
+        // contradict each other and leave the model to guess which wins.
         val composed = SystemConstitution.compose("You are a pirate.")
-        assertTrue(composed.startsWith("SYSTEM CONSTITUTION"))
-        assertTrue(composed.endsWith("You are a pirate."))
-        assertTrue(composed.indexOf("RESPONSE STRUCTURE") < composed.indexOf("You are a pirate."))
+        assertTrue(composed.startsWith("You are a pirate."))
+        assertTrue(!composed.contains("MOBILE AGENTIC ENGINE"))
+        assertTrue(composed.contains("AVAILABLE CAPABILITIES"))
     }
 
     @Test
-    fun `no persona still yields the constitution and capabilities`() {
+    fun `no system prompt falls back to the constitution`() {
         val composed = SystemConstitution.compose(null)
         assertTrue(composed.startsWith("SYSTEM CONSTITUTION"))
         assertTrue(composed.contains("AVAILABLE CAPABILITIES"))
@@ -45,7 +47,7 @@ class SystemConstitutionTest {
     @Test
     fun `a populated inventory lists every tool by name`() {
         val composed = SystemConstitution.compose(
-            personaPrompt = null,
+            systemPrompt = null,
             tools = listOf(
                 SystemConstitution.ToolSummary("web_search", "Search the public web for current pages."),
                 SystemConstitution.ToolSummary("fetch_url", "Read a single URL and extract its text."),
@@ -59,12 +61,13 @@ class SystemConstitutionTest {
     }
 
     @Test
-    fun `the inventory comes before the persona`() {
+    fun `the inventory is appended to whatever prompt is supplied`() {
         val composed = SystemConstitution.compose(
-            personaPrompt = "You are terse.",
+            systemPrompt = "You are terse.",
             tools = listOf(SystemConstitution.ToolSummary("web_search", "Search.")),
         )
-        assertTrue(composed.indexOf("AVAILABLE CAPABILITIES") < composed.indexOf("You are terse."))
+        assertTrue(composed.startsWith("You are terse."))
+        assertTrue(composed.indexOf("AVAILABLE CAPABILITIES") > composed.indexOf("You are terse."))
     }
 
     // ── Scratchpad extraction ────────────────────────────────────────────────

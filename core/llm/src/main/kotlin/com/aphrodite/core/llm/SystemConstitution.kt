@@ -36,8 +36,10 @@ object SystemConstitution {
     /**
      * Builds the effective system prompt.
      *
-     * The constitution always comes first so a persona cannot accidentally override the
-     * operational rules; the persona is appended as additional context below it.
+     * [systemPrompt] is the active preset's text. It defaults to [TEXT] when absent, so the
+     * constitution is what gets sent unless someone deliberately replaced it — an edited preset
+     * is a replacement, not an addition, because stacking two sets of operating rules produces
+     * contradictions the model then has to guess between.
      *
      * [tools] is the inventory actually offered on this turn. Small local models have no way to
      * know what is available unless it is stated in the prompt, so the section is generated from
@@ -45,16 +47,11 @@ object SystemConstitution {
      * that the model knows it has nothing to consult than that it invents a capability.
      */
     fun compose(
-        personaPrompt: String?,
+        systemPrompt: String?,
         tools: List<ToolSummary> = emptyList(),
     ): String {
-        val persona = personaPrompt?.trim().orEmpty()
-        val sections = listOfNotNull(
-            TEXT,
-            capabilitySection(tools),
-            persona.ifEmpty { null },
-        )
-        return sections.joinToString("\n\n")
+        val base = systemPrompt?.trim()?.takeIf { it.isNotEmpty() } ?: TEXT
+        return listOf(base, capabilitySection(tools)).joinToString("\n\n")
     }
 
     /** One capability as the model should see it: what it is called and when to reach for it. */

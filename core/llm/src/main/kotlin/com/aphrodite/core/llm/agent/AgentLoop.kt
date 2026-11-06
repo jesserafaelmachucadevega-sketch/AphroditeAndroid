@@ -40,6 +40,8 @@ class AgentLoop @Inject constructor(
         request: LlmRequest,
         maxRounds: Int = DEFAULT_MAX_ROUNDS,
     ): Flow<LlmEvent> = flow {
+        // The active preset's prompt replaces the constitution rather than adding to it; when
+        // there is no preset the constitution itself is the prompt.
         val systemPrompt = SystemConstitution.compose(request.persona, registry.inventory())
         val conversation = mutableListOf<LlmMessage>()
         conversation += LlmMessage(role = LlmRole.System, content = systemPrompt)

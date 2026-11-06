@@ -50,6 +50,7 @@ fun AphroditeNavHost(
     val preferences by viewModel.state.collectAsStateWithLifecycle()
     val chatState by chatViewModel.state.collectAsStateWithLifecycle()
     val servicesState by settingsViewModel.services.collectAsStateWithLifecycle()
+    val presetsState by settingsViewModel.presets.collectAsStateWithLifecycle()
     val notesState by notesViewModel.state.collectAsStateWithLifecycle()
     val tasksState by tasksViewModel.state.collectAsStateWithLifecycle()
     val navController = rememberNavController()
@@ -172,6 +173,8 @@ fun AphroditeNavHost(
                     buildInfo = buildInfo,
                     servicesState = servicesState,
                     servicesHandlers = settingsViewModel.toServicesHandlers(),
+                    presetsState = presetsState,
+                    presetsHandlers = settingsViewModel.toPresetsHandlers(),
                 )
             }
         }
@@ -192,6 +195,18 @@ private fun SettingsViewModel.toServicesHandlers(): ServicesHandlers = ServicesH
     onToggleFavourite = ::toggleFavourite,
     onModelQueryChange = ::onModelQueryChange,
 )
+
+/** Wires the presets panel's callbacks to its view model. */
+private fun SettingsViewModel.toPresetsHandlers(): com.aphrodite.feature.settings.PresetsHandlers =
+    com.aphrodite.feature.settings.PresetsHandlers(
+        onActivate = ::activatePreset,
+        onEdit = ::editPreset,
+        onAdd = ::addPreset,
+        onChange = ::onPresetDraftChange,
+        onCancel = ::cancelPresetEdit,
+        onSave = ::savePreset,
+        onDelete = ::deletePreset,
+    )
 
 private fun titleFor(route: String): String = when (route) {
     Routes.CHAT -> "Chats"

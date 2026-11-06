@@ -17,14 +17,23 @@ import javax.inject.Inject
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val endpoints: EndpointRepository,
+    private val presetDao: com.aphrodite.core.database.dao.PresetDao,
 ) : ViewModel() {
 
     private val _services = MutableStateFlow(ServicesState())
     val services: StateFlow<ServicesState> = _services.asStateFlow()
 
+    private val _presets = MutableStateFlow(PresetsState())
+    val presets: StateFlow<PresetsState> = _presets.asStateFlow()
+
     private var selectedEndpointId: String? = null
 
     init {
+        viewModelScope.launch {
+            presetDao.observeAll().collect { list ->
+                _presets.update { it.copy(presets = list) }
+            }
+        }
         viewModelScope.launch {
             endpoints.observeEndpoints().collect { list ->
                 _services.update { it.copy(endpoints = list) }
@@ -144,6 +153,88 @@ class SettingsViewModel @Inject constructor(
     }
 
     fun onModelQueryChange(value: String) = _services.update { it.copy(modelQuery = value) }
+
+    // ── Presets ──────────────────────────────────────────────────────────────
+
+    fun activatePreset(id: String) {
+        viewModelScope.launch {
+            presetDao.setActive(id)
+            _presets.update { it.copy(notice = "Active preset changed. New turns use it.") }
+        }
+    }
+
+    fun editPreset(preset: com.aphrodite.core.database.entity.PresetEntity) {
+        _presets.update {
+            it.copy(
+                draft = PresetDraft(
+                    id = preset.id,
+                    name = preset.name,
+                    description = preset.description.orEmpty(),
+                    systemPrompt = preset.systemPrompt,
+                    temperature = preset.temperature?.toFloat() ?: 0.7f,
+                    maxOutputTokens = preset.maxOutputTokens?.toString().orEmpty(),
+                    isBuiltin = preset.isBuiltin,
+                ),
+                notice = null,
+            )
+        }
+    }
+
+    fun addPreset() = _presets.update {
+        it.copy(
+            draft = PresetDraft(
+                id = null,
+                name = "New preset",
+                systemPrompt = com.aphrodite.core.llm.SystemConstitution.TEXT,
+            ),
+            notice = null,
+        )
+    }
+
+    fun onPresetDraftChange(draft: PresetDraft) = _presets.update { it.copy(draft = draft) }
+
+    fun cancelPresetEdit() = _presets.update { it.copy(draft = null) }
+
+    fun savePreset() {
+        val draft = _presets.value.draft ?: return
+        if (draft.name.isBlank() || draft.systemPrompt.isBlank()) return
+        viewModelScope.launch {
+            val existing = draft.id?.let { presetDao.getById(it) }
+            val now = System.currentTimeMillis()
+            presetDao.upsert(
+                com.aphrodite.core.database.entity.PresetEntity(
+                    id = existing?.id ?: com.aphrodite.core.llm.PresetSeeder.newCustomId(),
+                    name = draft.name.trim(),
+                    description = draft.description.takeIf { it.isNotBlank() },
+                    systemPrompt = draft.systemPrompt,
+                    personaNotes = existing?.personaNotes,
+                    memorySchema = existing?.memorySchema,
+                    // Only send temperature when it differs from the default, so a provider's
+                    // own default is preserved otherwise.
+                    temperature = draft.temperature.takeIf { it != 0.7f }?.toDouble(),
+                    topP = existing?.topP,
+                    maxOutputTokens = draft.maxOutputTokens.toIntOrNull(),
+                    thinkingMode = existing?.thinkingMode,
+                    reasoningEffort = existing?.reasoningEffort,
+                    showPersonaName = existing?.showPersonaName ?: false,
+                    isBuiltin = existing?.isBuiltin ?: false,
+                    enabled = existing?.enabled ?: false,
+                    icon = existing?.icon,
+                    color = existing?.color,
+                    createdAt = existing?.createdAt ?: now,
+                    updatedAt = now,
+                ),
+            )
+            _presets.update { it.copy(draft = null, notice = "Preset saved.") }
+        }
+    }
+
+    fun deletePreset(id: String) {
+        viewModelScope.launch {
+            presetDao.deleteCustom(id)
+            _presets.update { it.copy(notice = "Preset removed.") }
+        }
+    }
 
     fun dismissMessages() = _services.update { it.copy(message = null, error = null) }
 

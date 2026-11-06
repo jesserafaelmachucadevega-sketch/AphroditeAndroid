@@ -186,8 +186,9 @@ class ChatRepository @Inject constructor(
         val model = session.model ?: return null
 
         val resolved = endpoints.resolve(endpointId) ?: return null
-        val preset = presetId?.let { presetDao.getById(it) }
-            ?: presetDao.builtins().firstOrNull()
+        // The active preset supplies the system prompt and sampling defaults. With none active
+        // the agent loop falls back to the built-in constitution.
+        val preset = presetId?.let { presetDao.getById(it) } ?: presetDao.active()
 
         val history = messageDao.forSession(sessionId).takeLast(historyLimit)
 

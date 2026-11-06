@@ -95,6 +95,25 @@ interface PresetDao {
     @Query("SELECT * FROM presets WHERE enabled = 1 ORDER BY is_builtin DESC, name ASC")
     fun observeEnabled(): Flow<List<PresetEntity>>
 
+    /** The preset a conversation uses. Exactly one may be enabled at a time. */
+    @Query("SELECT * FROM presets WHERE enabled = 1 LIMIT 1")
+    suspend fun active(): PresetEntity?
+
+    @Query("SELECT COUNT(*) FROM presets")
+    suspend fun count(): Int
+
+    @Query("UPDATE presets SET enabled = 0")
+    suspend fun disableAll()
+
+    @Query("UPDATE presets SET enabled = 1 WHERE id = :id")
+    suspend fun enable(id: String)
+
+    @androidx.room.Transaction
+    suspend fun setActive(id: String) {
+        disableAll()
+        enable(id)
+    }
+
     @Query("SELECT * FROM presets ORDER BY is_builtin DESC, name ASC")
     fun observeAll(): Flow<List<PresetEntity>>
 

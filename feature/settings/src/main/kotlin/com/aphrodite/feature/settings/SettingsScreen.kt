@@ -40,6 +40,7 @@ enum class SettingsCategory(
     val group: String,
 ) {
     Services("services", "Providers", AphroditeIcons.Server, "Models"),
+    Presets("presets", "Presets", AphroditeIcons.Skills, "Models"),
     Appearance("appearance", "Appearance", AphroditeIcons.Palette, "Interface"),
     About("about", "About", AphroditeIcons.Info, "System"),
 }
@@ -72,6 +73,8 @@ fun SettingsScreen(
     modifier: Modifier = Modifier,
     servicesState: ServicesState = ServicesState(),
     servicesHandlers: ServicesHandlers? = null,
+    presetsState: PresetsState = PresetsState(),
+    presetsHandlers: PresetsHandlers? = null,
 ) {
     val profile = com.aphrodite.core.adaptive.LocalDeviceProfile.current
     val twoPane = profile.supportsTwoPanes
@@ -92,7 +95,7 @@ fun SettingsScreen(
                     .background(aphroditeColors.border),
             )
             Box(modifier = Modifier.weight(1f)) {
-                SettingsPanel(selected, state, handlers, themes, buildInfo, servicesState, servicesHandlers)
+                SettingsPanel(selected, state, handlers, themes, buildInfo, servicesState, servicesHandlers, presetsState, presetsHandlers)
             }
         }
     } else {
@@ -104,6 +107,8 @@ fun SettingsScreen(
             buildInfo = buildInfo,
             servicesState = servicesState,
             servicesHandlers = servicesHandlers,
+            presetsState = presetsState,
+            presetsHandlers = presetsHandlers,
             showCategoryPicker = true,
             onSelect = onSelect,
         )
@@ -155,6 +160,8 @@ private fun SettingsPanel(
     buildInfo: BuildInfo,
     servicesState: ServicesState,
     servicesHandlers: ServicesHandlers?,
+    presetsState: PresetsState,
+    presetsHandlers: PresetsHandlers?,
     showCategoryPicker: Boolean = false,
     onSelect: (SettingsCategory) -> Unit = {},
 ) {
@@ -190,6 +197,17 @@ private fun SettingsPanel(
                             title = "Providers unavailable",
                             description = "The model layer did not initialise.",
                             icon = AphroditeIcons.Server,
+                        )
+                    }
+
+                SettingsCategory.Presets ->
+                    if (presetsHandlers != null) {
+                        PresetsSettingsPanel(state = presetsState, handlers = presetsHandlers)
+                    } else {
+                        AphroditeEmptyState(
+                            title = "Presets unavailable",
+                            description = "The preset store did not initialise.",
+                            icon = AphroditeIcons.Skills,
                         )
                     }
 
