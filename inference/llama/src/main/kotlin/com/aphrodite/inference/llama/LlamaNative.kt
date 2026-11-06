@@ -67,7 +67,41 @@ internal object LlamaNative {
     fun modelMetadata(handle: Long, key: String): String? =
         if (available && handle != 0L) modelMetadataNative(handle, key) else null
 
+    fun createContext(modelHandle: Long, contextSize: Int, threads: Int): Long =
+        if (available && modelHandle != 0L) createContextNative(modelHandle, contextSize, threads) else 0L
+
+    fun freeContext(handle: Long) {
+        if (available && handle != 0L) freeContextNative(handle)
+    }
+
+    fun contextSize(handle: Long): Int =
+        if (available && handle != 0L) contextSizeNative(handle) else 0
+
+    fun generate(
+        contextHandle: Long,
+        prompt: String,
+        maxTokens: Int,
+        temperature: Float,
+        topP: Float,
+        listener: TokenListener,
+    ): String = if (available && contextHandle != 0L) {
+        generateNative(contextHandle, prompt, maxTokens, temperature, topP, listener)
+    } else {
+        ""
+    }
+
     private external fun initializeNative(): Boolean
+    private external fun createContextNative(modelHandle: Long, contextSize: Int, threads: Int): Long
+    private external fun freeContextNative(handle: Long)
+    private external fun contextSizeNative(handle: Long): Int
+    private external fun generateNative(
+        contextHandle: Long,
+        prompt: String,
+        maxTokens: Int,
+        temperature: Float,
+        topP: Float,
+        listener: TokenListener,
+    ): String
     private external fun loadModelNative(path: String, vocabOnly: Boolean): Long
     private external fun freeModelNative(handle: Long)
     private external fun modelDescriptionNative(handle: Long): String
