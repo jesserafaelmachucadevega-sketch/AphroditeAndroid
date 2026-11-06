@@ -195,6 +195,8 @@ fun AphroditeNavHost(
                     onRefresh = galleryViewModel::refresh,
                     onDismissError = galleryViewModel::dismissError,
                     onPermissionRequest = { permissionLauncher.launch(galleryViewModel.requiredPermission()) },
+                    onEdit = galleryViewModel::startEditing,
+                    onCloseEditor = galleryViewModel::stopEditing,
                 )
             }
             composable(Routes.COMPARE) {

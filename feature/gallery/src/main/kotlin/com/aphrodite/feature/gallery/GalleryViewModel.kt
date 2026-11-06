@@ -38,6 +38,7 @@ data class GalleryUiState(
     val loading: Boolean = true,
     val permissionGranted: Boolean = false,
     val openIndex: Int? = null,
+    val editing: GalleryItem? = null,
     val error: String? = null,
 ) {
     val visible: List<GalleryItem>
@@ -162,6 +163,10 @@ class GalleryViewModel @Inject constructor(
     }
 
     fun close() = _state.update { it.copy(openIndex = null) }
+
+    fun startEditing(item: GalleryItem) = _state.update { it.copy(editing = item, openIndex = null) }
+
+    fun stopEditing() = _state.update { it.copy(editing = null) }
 
     fun showNext() = _state.update { current ->
         val index = current.openIndex ?: return@update current

@@ -18,5 +18,6 @@ dependencies {
     implementation(project(":core:llm"))
     implementation(project(":core:media"))
     implementation(libs.coil.network.okhttp)
+    implementation("androidx.exifinterface:exifinterface:1.3.7")
     implementation(libs.coil.compose)
 }

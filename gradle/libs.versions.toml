@@ -20,8 +20,8 @@ compileSdk = "37"
 # appVersionCode is what Android actually compares to decide whether an install
 # is an upgrade, so it must increase on every build even when the visible name
 # is revised. Keep the two in step: code N ships as the Nth published build.
-appVersionName = "0.32"
-appVersionCode = "32"
+appVersionName = "0.33"
+appVersionCode = "33"
 
 # AndroidX / Compose
 composeBom = "2026.09.00"

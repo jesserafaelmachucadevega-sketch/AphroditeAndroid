@@ -61,15 +61,23 @@ fun GalleryScreen(
     onRefresh: () -> Unit,
     onDismissError: () -> Unit,
     onPermissionRequest: () -> Unit,
+    onEdit: (GalleryItem) -> Unit,
+    onCloseEditor: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val colors = aphroditeColors
+
+    state.editing?.let { item ->
+        ImageEditorRoute(item = item, onClose = onCloseEditor)
+        return
+    }
 
     if (state.openIndex != null) {
         Viewer(
             state = state,
             onClose = onClose,
             onDelete = onDelete,
+            onEdit = onEdit,
         )
         return
     }
@@ -194,6 +202,7 @@ private fun Viewer(
     state: GalleryUiState,
     onClose: () -> Unit,
     onDelete: (GalleryItem) -> Unit,
+    onEdit: (GalleryItem) -> Unit,
 ) {
     val items = state.visible
     if (items.isEmpty()) return
@@ -250,6 +259,12 @@ private fun Viewer(
                     style = MaterialTheme.typography.labelSmall,
                 )
             }
+            AphroditeIconButton(
+                icon = AphroditeIcons.Edit,
+                contentDescription = "Edit",
+                onClick = { onEdit(current) },
+                tint = Color.White,
+            )
             if (current.source == GallerySource.Upload) {
                 AphroditeIconButton(
                     icon = AphroditeIcons.Trash,
