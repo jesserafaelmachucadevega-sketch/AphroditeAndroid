@@ -35,6 +35,8 @@ import com.aphrodite.feature.email.EmailViewModel
 import com.aphrodite.feature.memory.MemoryScreen
 import com.aphrodite.feature.memory.MemoryViewModel
 import com.aphrodite.feature.notes.NotesScreen
+import com.aphrodite.feature.search.SearchScreen
+import com.aphrodite.feature.search.SearchViewModel
 import com.aphrodite.feature.skills.SkillsScreen
 import com.aphrodite.feature.skills.SkillsViewModel
 import com.aphrodite.feature.notes.NotesViewModel
@@ -64,6 +66,7 @@ fun AphroditeNavHost(
     documentsViewModel: DocumentsViewModel = hiltViewModel(),
     memoryViewModel: MemoryViewModel = hiltViewModel(),
     skillsViewModel: SkillsViewModel = hiltViewModel(),
+    searchViewModel: SearchViewModel = hiltViewModel(),
 ) {
     val preferences by viewModel.state.collectAsStateWithLifecycle()
     val chatState by chatViewModel.state.collectAsStateWithLifecycle()
@@ -78,6 +81,7 @@ fun AphroditeNavHost(
     val documentsState by documentsViewModel.state.collectAsStateWithLifecycle()
     val memoryState by memoryViewModel.state.collectAsStateWithLifecycle()
     val skillsState by skillsViewModel.state.collectAsStateWithLifecycle()
+    val searchState by searchViewModel.state.collectAsStateWithLifecycle()
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route ?: Routes.SETTINGS
@@ -163,6 +167,14 @@ fun AphroditeNavHost(
                     onCancelEdit = calendarViewModel::cancelEdit,
                     onSave = calendarViewModel::save,
                     onDismissError = calendarViewModel::dismissError,
+                )
+            }
+            composable(Routes.SEARCH) {
+                SearchScreen(
+                    state = searchState,
+                    onQueryChange = searchViewModel::onQueryChange,
+                    onClear = searchViewModel::clear,
+                    onDismissError = searchViewModel::dismissError,
                 )
             }
             composable(Routes.SKILLS) {

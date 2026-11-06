@@ -49,6 +49,7 @@ dependencies {
     implementation(project(":feature:documents"))
     implementation(project(":feature:memory"))
     implementation(project(":feature:skills"))
+    implementation(project(":feature:search"))
     implementation(project(":feature:settings"))
 
     implementation(platform(libs.compose.bom))

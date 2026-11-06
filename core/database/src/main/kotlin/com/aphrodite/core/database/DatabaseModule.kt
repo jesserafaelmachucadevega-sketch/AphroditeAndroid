@@ -95,4 +95,8 @@ object DatabaseModule {
     @Provides
     fun provideSkillDao(database: AphroditeDatabase): com.aphrodite.core.database.dao.SkillDao =
         database.skillDao()
+
+    @Provides
+    fun provideSearchDao(database: AphroditeDatabase): com.aphrodite.core.database.dao.SearchDao =
+        database.searchDao()
 }

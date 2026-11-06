@@ -93,6 +93,7 @@ abstract class AphroditeDatabase : RoomDatabase() {
     abstract fun documentDao(): com.aphrodite.core.database.dao.DocumentDao
     abstract fun memoryDao(): com.aphrodite.core.database.dao.MemoryDao
     abstract fun skillDao(): com.aphrodite.core.database.dao.SkillDao
+    abstract fun searchDao(): com.aphrodite.core.database.dao.SearchDao
 
     companion object {
         const val NAME = "aphrodite.db"

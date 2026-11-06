@@ -68,6 +68,12 @@ val aphroditeDestinations: List<AphroditeDestination> = listOf(
         section = Sections.TOOLS,
     ),
     AphroditeDestination(
+        route = Routes.SEARCH,
+        label = "Search",
+        icon = AphroditeIcons.Search,
+        section = Sections.TOOLS,
+    ),
+    AphroditeDestination(
         route = Routes.SKILLS,
         label = "Skills",
         icon = AphroditeIcons.Sparkles,
