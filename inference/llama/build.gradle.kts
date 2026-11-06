@@ -22,7 +22,9 @@ android {
         ndk {
             // arm64 only. Every modern device is arm64, and each additional ABI roughly doubles
             // native build time and adds a full copy of the libraries to the APK.
-            abiFilters += "arm64-v8a"
+            // x86_64 is for the emulator only: llama.cpp builds for it, which is what makes the
+            // inference path testable without a physical device. arm64 covers real hardware.
+            abiFilters += listOf("arm64-v8a", "x86_64")
         }
     }
 

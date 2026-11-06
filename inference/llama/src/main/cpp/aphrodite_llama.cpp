@@ -11,7 +11,7 @@ namespace {
 }
 
 extern "C" JNIEXPORT jboolean JNICALL
-Java_com_aphrodite_inference_llama_LlamaNative_initialize(JNIEnv *, jclass) {
+Java_com_aphrodite_inference_llama_LlamaNative_initializeNative(JNIEnv *, jclass) {
     if (g_initialised) return JNI_TRUE;
     // Registers the available CPU backends. Must happen before any model is loaded, and doing it
     // twice aborts the process.
@@ -21,18 +21,18 @@ Java_com_aphrodite_inference_llama_LlamaNative_initialize(JNIEnv *, jclass) {
 }
 
 extern "C" JNIEXPORT jstring JNICALL
-Java_com_aphrodite_inference_llama_LlamaNative_systemInfo(JNIEnv *env, jclass) {
+Java_com_aphrodite_inference_llama_LlamaNative_systemInfoNative(JNIEnv *env, jclass) {
     const char *info = llama_print_system_info();
     return env->NewStringUTF(info ? info : "");
 }
 
 extern "C" JNIEXPORT jstring JNICALL
-Java_com_aphrodite_inference_llama_LlamaNative_version(JNIEnv *env, jclass) {
+Java_com_aphrodite_inference_llama_LlamaNative_versionNative(JNIEnv *env, jclass) {
     return env->NewStringUTF("llama.cpp 67107ac");
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_com_aphrodite_inference_llama_LlamaNative_shutdown(JNIEnv *, jclass) {
+Java_com_aphrodite_inference_llama_LlamaNative_shutdownNative(JNIEnv *, jclass) {
     if (!g_initialised) return;
     llama_backend_free();
     g_initialised = false;
@@ -45,7 +45,7 @@ Java_com_aphrodite_inference_llama_LlamaNative_shutdown(JNIEnv *, jclass) {
 // reading real metadata practical instead of guessing from the file name.
 
 extern "C" JNIEXPORT jlong JNICALL
-Java_com_aphrodite_inference_llama_LlamaNative_loadModel(
+Java_com_aphrodite_inference_llama_LlamaNative_loadModelNative(
         JNIEnv *env, jclass, jstring jpath, jboolean vocab_only) {
     if (!g_initialised) return 0;
 
@@ -64,13 +64,13 @@ Java_com_aphrodite_inference_llama_LlamaNative_loadModel(
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_com_aphrodite_inference_llama_LlamaNative_freeModel(JNIEnv *, jclass, jlong handle) {
+Java_com_aphrodite_inference_llama_LlamaNative_freeModelNative(JNIEnv *, jclass, jlong handle) {
     if (handle == 0) return;
     llama_model_free(reinterpret_cast<llama_model *>(handle));
 }
 
 extern "C" JNIEXPORT jstring JNICALL
-Java_com_aphrodite_inference_llama_LlamaNative_modelDescription(
+Java_com_aphrodite_inference_llama_LlamaNative_modelDescriptionNative(
         JNIEnv *env, jclass, jlong handle) {
     if (handle == 0) return env->NewStringUTF("");
     // The buffer form is used rather than the returned pointer: the signature writes into a
@@ -81,7 +81,7 @@ Java_com_aphrodite_inference_llama_LlamaNative_modelDescription(
 }
 
 extern "C" JNIEXPORT jlong JNICALL
-Java_com_aphrodite_inference_llama_LlamaNative_modelParameters(
+Java_com_aphrodite_inference_llama_LlamaNative_modelParametersNative(
         JNIEnv *, jclass, jlong handle) {
     if (handle == 0) return 0;
     return static_cast<jlong>(
@@ -89,14 +89,14 @@ Java_com_aphrodite_inference_llama_LlamaNative_modelParameters(
 }
 
 extern "C" JNIEXPORT jlong JNICALL
-Java_com_aphrodite_inference_llama_LlamaNative_modelSize(
+Java_com_aphrodite_inference_llama_LlamaNative_modelSizeNative(
         JNIEnv *, jclass, jlong handle) {
     if (handle == 0) return 0;
     return static_cast<jlong>(llama_model_size(reinterpret_cast<llama_model *>(handle)));
 }
 
 extern "C" JNIEXPORT jint JNICALL
-Java_com_aphrodite_inference_llama_LlamaNative_modelContextLength(
+Java_com_aphrodite_inference_llama_LlamaNative_modelContextLengthNative(
         JNIEnv *, jclass, jlong handle) {
     if (handle == 0) return 0;
     return static_cast<jint>(
@@ -110,7 +110,7 @@ Java_com_aphrodite_inference_llama_LlamaNative_modelContextLength(
  * converter and the architecture, so callers have to cope with missing values regardless.
  */
 extern "C" JNIEXPORT jstring JNICALL
-Java_com_aphrodite_inference_llama_LlamaNative_modelMetadata(
+Java_com_aphrodite_inference_llama_LlamaNative_modelMetadataNative(
         JNIEnv *env, jclass, jlong handle, jstring jkey) {
     if (handle == 0) return nullptr;
 
@@ -141,7 +141,7 @@ namespace {
 }
 
 extern "C" JNIEXPORT jlong JNICALL
-Java_com_aphrodite_inference_llama_LlamaNative_createContext(
+Java_com_aphrodite_inference_llama_LlamaNative_createContextNative(
         JNIEnv *, jclass, jlong model_handle, jint n_ctx, jint n_threads) {
     if (model_handle == 0) return 0;
 
@@ -158,13 +158,13 @@ Java_com_aphrodite_inference_llama_LlamaNative_createContext(
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_com_aphrodite_inference_llama_LlamaNative_freeContext(JNIEnv *, jclass, jlong handle) {
+Java_com_aphrodite_inference_llama_LlamaNative_freeContextNative(JNIEnv *, jclass, jlong handle) {
     if (handle == 0) return;
     llama_free(reinterpret_cast<llama_context *>(handle));
 }
 
 extern "C" JNIEXPORT jint JNICALL
-Java_com_aphrodite_inference_llama_LlamaNative_contextSize(JNIEnv *, jclass, jlong handle) {
+Java_com_aphrodite_inference_llama_LlamaNative_contextSizeNative(JNIEnv *, jclass, jlong handle) {
     if (handle == 0) return 0;
     return static_cast<jint>(llama_n_ctx(reinterpret_cast<llama_context *>(handle)));
 }
@@ -181,7 +181,7 @@ Java_com_aphrodite_inference_llama_LlamaNative_contextSize(JNIEnv *, jclass, jlo
  * than running to completion after the user has moved on.
  */
 extern "C" JNIEXPORT jstring JNICALL
-Java_com_aphrodite_inference_llama_LlamaNative_generate(
+Java_com_aphrodite_inference_llama_LlamaNative_generateNative(
         JNIEnv *env, jclass, jlong handle, jstring jprompt,
         jint max_tokens, jfloat temperature, jfloat top_p, jobject callback) {
     if (handle == 0) return env->NewStringUTF("");

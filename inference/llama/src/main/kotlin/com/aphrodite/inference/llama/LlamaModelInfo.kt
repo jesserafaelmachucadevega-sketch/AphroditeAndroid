@@ -47,4 +47,7 @@ object LlamaInspector {
     }
 
     val isAvailable: Boolean get() = LlamaNative.available
+
+    /** What llama.cpp reports about the device's CPU and backends. Useful when a model will not load. */
+    fun systemInfo(): String = LlamaNative.systemInfo()
 }

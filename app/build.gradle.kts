@@ -54,6 +54,7 @@ dependencies {
     implementation(project(":feature:compare"))
     implementation(project(":feature:gallery"))
     implementation(project(":feature:cookbook"))
+    implementation(project(":inference:llama"))
     implementation(project(":core:voice"))
     implementation(project(":feature:settings"))
 
