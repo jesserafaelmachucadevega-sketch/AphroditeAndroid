@@ -28,6 +28,8 @@ import com.aphrodite.feature.calendar.CalendarScreen
 import com.aphrodite.feature.calendar.CalendarViewModel
 import com.aphrodite.feature.contacts.ContactsScreen
 import com.aphrodite.feature.contacts.ContactsViewModel
+import com.aphrodite.feature.email.EmailScreen
+import com.aphrodite.feature.email.EmailViewModel
 import com.aphrodite.feature.notes.NotesScreen
 import com.aphrodite.feature.notes.NotesViewModel
 import com.aphrodite.feature.tasks.TasksScreen
@@ -52,6 +54,7 @@ fun AphroditeNavHost(
     tasksViewModel: TasksViewModel = hiltViewModel(),
     calendarViewModel: CalendarViewModel = hiltViewModel(),
     contactsViewModel: ContactsViewModel = hiltViewModel(),
+    emailViewModel: EmailViewModel = hiltViewModel(),
 ) {
     val preferences by viewModel.state.collectAsStateWithLifecycle()
     val chatState by chatViewModel.state.collectAsStateWithLifecycle()
@@ -62,6 +65,7 @@ fun AphroditeNavHost(
     val tasksState by tasksViewModel.state.collectAsStateWithLifecycle()
     val calendarState by calendarViewModel.state.collectAsStateWithLifecycle()
     val contactsState by contactsViewModel.state.collectAsStateWithLifecycle()
+    val emailState by emailViewModel.state.collectAsStateWithLifecycle()
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route ?: Routes.SETTINGS
@@ -147,6 +151,26 @@ fun AphroditeNavHost(
                     onCancelEdit = calendarViewModel::cancelEdit,
                     onSave = calendarViewModel::save,
                     onDismissError = calendarViewModel::dismissError,
+                )
+            }
+            composable(Routes.EMAIL) {
+                EmailScreen(
+                    state = emailState,
+                    onAddAccount = emailViewModel::startAddAccount,
+                    onEditAccount = emailViewModel::startEditAccount,
+                    onDeleteAccount = emailViewModel::deleteAccount,
+                    onSelectAccount = emailViewModel::selectAccount,
+                    onSelectFolder = emailViewModel::selectFolder,
+                    onDraftChange = emailViewModel::onDraftChange,
+                    onCancelDraft = emailViewModel::cancelDraft,
+                    onTest = emailViewModel::testConnection,
+                    onSaveAccount = emailViewModel::saveAccount,
+                    onOpenMessage = emailViewModel::open,
+                    onCloseMessage = emailViewModel::closeMessage,
+                    onRefresh = {
+                        emailState.activeAccount?.let { emailViewModel.loadMessages(it.id, emailState.folder) }
+                    },
+                    onDismiss = emailViewModel::dismiss,
                 )
             }
             composable(Routes.CONTACTS) {

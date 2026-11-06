@@ -60,5 +60,35 @@ object AphroditeMigrations {
         }
     }
 
-    val ALL: Array<Migration> = arrayOf(MIGRATION_1_2)
+    /** 2 → 3: IMAP/SMTP accounts. */
+    val MIGRATION_2_3 = object : Migration(2, 3) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                "CREATE TABLE IF NOT EXISTS `email_accounts` (" +
+                    "`id` TEXT NOT NULL, " +
+                    "`address` TEXT NOT NULL, " +
+                    "`displayName` TEXT, " +
+                    "`imap_host` TEXT NOT NULL, " +
+                    "`imap_port` INTEGER NOT NULL, " +
+                    "`imap_security` TEXT NOT NULL, " +
+                    "`imap_username` TEXT NOT NULL, " +
+                    "`imap_password_ref` TEXT, " +
+                    "`smtp_host` TEXT, " +
+                    "`smtp_port` INTEGER NOT NULL, " +
+                    "`smtp_security` TEXT NOT NULL, " +
+                    "`smtp_username` TEXT, " +
+                    "`smtp_password_ref` TEXT, " +
+                    "`enabled` INTEGER NOT NULL, " +
+                    "`is_default` INTEGER NOT NULL, " +
+                    "`last_sync_at` INTEGER, " +
+                    "`last_error` TEXT, " +
+                    "`created_at` INTEGER NOT NULL, " +
+                    "PRIMARY KEY(`id`))",
+            )
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_email_accounts_enabled` ON `email_accounts` (`enabled`)")
+            db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_email_accounts_address` ON `email_accounts` (`address`)")
+        }
+    }
+
+    val ALL: Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3)
 }

@@ -79,4 +79,8 @@ object DatabaseModule {
     @Provides
     fun provideMcpDao(database: AphroditeDatabase): com.aphrodite.core.database.dao.McpDao =
         database.mcpDao()
+
+    @Provides
+    fun provideEmailDao(database: AphroditeDatabase): com.aphrodite.core.database.dao.EmailDao =
+        database.emailDao()
 }

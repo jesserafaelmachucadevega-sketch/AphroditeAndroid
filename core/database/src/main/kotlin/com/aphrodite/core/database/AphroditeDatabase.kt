@@ -22,6 +22,7 @@ import com.aphrodite.core.database.entity.CalendarEventEntity
 import com.aphrodite.core.database.entity.ChatAttachmentEntity
 import com.aphrodite.core.database.entity.ChatMessageEntity
 import com.aphrodite.core.database.entity.ContactEntity
+import com.aphrodite.core.database.entity.EmailAccountEntity
 import com.aphrodite.core.database.entity.ModelEndpointEntity
 import com.aphrodite.core.database.entity.ModelEntity
 import com.aphrodite.core.database.entity.McpServerEntity
@@ -61,8 +62,9 @@ import com.aphrodite.core.database.entity.UserProfileEntity
         AuthSessionEntity::class,
         McpServerEntity::class,
         McpToolEntity::class,
+        EmailAccountEntity::class,
     ],
-    version = 2,
+    version = 3,
     exportSchema = true,
 )
 @TypeConverters(DatabaseConverters::class)
@@ -79,6 +81,7 @@ abstract class AphroditeDatabase : RoomDatabase() {
     abstract fun contactDao(): ContactDao
     abstract fun userDao(): UserDao
     abstract fun mcpDao(): McpDao
+    abstract fun emailDao(): com.aphrodite.core.database.dao.EmailDao
 
     companion object {
         const val NAME = "aphrodite.db"

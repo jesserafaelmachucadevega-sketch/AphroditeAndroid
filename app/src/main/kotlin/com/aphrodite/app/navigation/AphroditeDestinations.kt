@@ -56,6 +56,12 @@ val aphroditeDestinations: List<AphroditeDestination> = listOf(
         inBottomBar = true,
     ),
     AphroditeDestination(
+        route = Routes.EMAIL,
+        label = "Email",
+        icon = AphroditeIcons.Mail,
+        section = Sections.MAIL,
+    ),
+    AphroditeDestination(
         route = Routes.CALENDAR,
         label = "Calendar",
         icon = AphroditeIcons.Calendar,

@@ -11,6 +11,12 @@ android {
         buildConfig = true
     }
 
+    defaultConfig {
+        // Required by the AppAuth library's merged manifest. OAuth email sign-in will use this
+        // scheme; it must match the redirect URI registered with the provider.
+        manifestPlaceholders["appAuthRedirectScheme"] = "com.aphrodite"
+    }
+
     packaging {
         resources {
             excludes += setOf(
@@ -39,6 +45,7 @@ dependencies {
     implementation(project(":feature:tasks"))
     implementation(project(":feature:calendar"))
     implementation(project(":feature:contacts"))
+    implementation(project(":feature:email"))
     implementation(project(":feature:settings"))
 
     implementation(platform(libs.compose.bom))
