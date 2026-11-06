@@ -38,6 +38,7 @@ dependencies {
     implementation(project(":feature:notes"))
     implementation(project(":feature:tasks"))
     implementation(project(":feature:calendar"))
+    implementation(project(":feature:contacts"))
     implementation(project(":feature:settings"))
 
     implementation(platform(libs.compose.bom))

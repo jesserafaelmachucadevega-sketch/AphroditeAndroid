@@ -26,6 +26,8 @@ import com.aphrodite.designsystem.components.AphroditeTopBar
 import com.aphrodite.designsystem.theme.AphroditeThemes
 import com.aphrodite.feature.calendar.CalendarScreen
 import com.aphrodite.feature.calendar.CalendarViewModel
+import com.aphrodite.feature.contacts.ContactsScreen
+import com.aphrodite.feature.contacts.ContactsViewModel
 import com.aphrodite.feature.notes.NotesScreen
 import com.aphrodite.feature.notes.NotesViewModel
 import com.aphrodite.feature.tasks.TasksScreen
@@ -49,6 +51,7 @@ fun AphroditeNavHost(
     notesViewModel: NotesViewModel = hiltViewModel(),
     tasksViewModel: TasksViewModel = hiltViewModel(),
     calendarViewModel: CalendarViewModel = hiltViewModel(),
+    contactsViewModel: ContactsViewModel = hiltViewModel(),
 ) {
     val preferences by viewModel.state.collectAsStateWithLifecycle()
     val chatState by chatViewModel.state.collectAsStateWithLifecycle()
@@ -58,6 +61,7 @@ fun AphroditeNavHost(
     val notesState by notesViewModel.state.collectAsStateWithLifecycle()
     val tasksState by tasksViewModel.state.collectAsStateWithLifecycle()
     val calendarState by calendarViewModel.state.collectAsStateWithLifecycle()
+    val contactsState by contactsViewModel.state.collectAsStateWithLifecycle()
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route ?: Routes.SETTINGS
@@ -143,6 +147,19 @@ fun AphroditeNavHost(
                     onCancelEdit = calendarViewModel::cancelEdit,
                     onSave = calendarViewModel::save,
                     onDismissError = calendarViewModel::dismissError,
+                )
+            }
+            composable(Routes.CONTACTS) {
+                ContactsScreen(
+                    state = contactsState,
+                    onQueryChange = contactsViewModel::onQueryChange,
+                    onAdd = contactsViewModel::startAdd,
+                    onEdit = contactsViewModel::startEdit,
+                    onDelete = contactsViewModel::delete,
+                    onDraftChange = contactsViewModel::onDraftChange,
+                    onCancelEdit = contactsViewModel::cancelEdit,
+                    onSave = contactsViewModel::save,
+                    onDismissError = contactsViewModel::dismissError,
                 )
             }
             composable(Routes.TASKS) {
