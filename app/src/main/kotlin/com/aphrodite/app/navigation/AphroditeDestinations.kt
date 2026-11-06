@@ -69,6 +69,12 @@ val aphroditeDestinations: List<AphroditeDestination> = listOf(
         section = Sections.TOOLS,
     ),
     AphroditeDestination(
+        route = Routes.COOKBOOK,
+        label = "Cookbook",
+        icon = AphroditeIcons.Cookbook,
+        section = Sections.TOOLS,
+    ),
+    AphroditeDestination(
         route = Routes.GALLERY,
         label = "Gallery",
         icon = AphroditeIcons.Gallery,

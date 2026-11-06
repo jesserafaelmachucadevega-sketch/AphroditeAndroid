@@ -99,4 +99,8 @@ object DatabaseModule {
     @Provides
     fun provideSearchDao(database: AphroditeDatabase): com.aphrodite.core.database.dao.SearchDao =
         database.searchDao()
+
+    @Provides
+    fun provideLocalModelDao(database: AphroditeDatabase): com.aphrodite.core.database.dao.LocalModelDao =
+        database.localModelDao()
 }

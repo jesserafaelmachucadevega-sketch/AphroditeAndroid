@@ -44,4 +44,18 @@ class HttpClientFactory @Inject constructor() {
         .retryOnConnectionFailure(true)
         .followRedirects(true)
         .followSslRedirects(true)
+
+    /**
+     * For large file downloads.
+     *
+     * Separate from [standard] because the timeouts serve different purposes: an API call should
+     * fail fast, while a model download legitimately sits open for many minutes with no data
+     * arriving between chunks.
+     */
+    val modelDownload: OkHttpClient by lazy {
+        standard.newBuilder()
+            .readTimeout(120, java.util.concurrent.TimeUnit.SECONDS)
+            .callTimeout(0, java.util.concurrent.TimeUnit.SECONDS)
+            .build()
+    }
 }

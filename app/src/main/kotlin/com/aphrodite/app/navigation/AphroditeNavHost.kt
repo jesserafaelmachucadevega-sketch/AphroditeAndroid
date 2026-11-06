@@ -29,6 +29,8 @@ import com.aphrodite.feature.calendar.CalendarViewModel
 import com.aphrodite.feature.compare.CompareScreen
 import com.aphrodite.feature.compare.CompareViewModel
 import com.aphrodite.feature.contacts.ContactsScreen
+import com.aphrodite.feature.cookbook.CookbookScreen
+import com.aphrodite.feature.cookbook.CookbookViewModel
 import com.aphrodite.feature.gallery.GalleryScreen
 import com.aphrodite.feature.gallery.GalleryViewModel
 import com.aphrodite.feature.contacts.ContactsViewModel
@@ -76,6 +78,7 @@ fun AphroditeNavHost(
     speechViewModel: SpeechViewModel = hiltViewModel(),
     compareViewModel: CompareViewModel = hiltViewModel(),
     galleryViewModel: GalleryViewModel = hiltViewModel(),
+    cookbookViewModel: CookbookViewModel = hiltViewModel(),
 ) {
     val preferences by viewModel.state.collectAsStateWithLifecycle()
     val chatState by chatViewModel.state.collectAsStateWithLifecycle()
@@ -94,6 +97,7 @@ fun AphroditeNavHost(
     val speechState by speechViewModel.state.collectAsStateWithLifecycle()
     val compareState by compareViewModel.state.collectAsStateWithLifecycle()
     val galleryState by galleryViewModel.state.collectAsStateWithLifecycle()
+    val cookbookState by cookbookViewModel.state.collectAsStateWithLifecycle()
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route ?: Routes.SETTINGS
@@ -179,6 +183,21 @@ fun AphroditeNavHost(
                     onCancelEdit = calendarViewModel::cancelEdit,
                     onSave = calendarViewModel::save,
                     onDismissError = calendarViewModel::dismissError,
+                )
+            }
+            composable(Routes.COOKBOOK) {
+                val picker = androidx.activity.compose.rememberLauncherForActivityResult(
+                    androidx.activity.result.contract.ActivityResultContracts.OpenDocument(),
+                ) { uri -> uri?.let { cookbookViewModel.importFrom(it, null) } }
+                CookbookScreen(
+                    state = cookbookState,
+                    onUrlChange = cookbookViewModel::onUrlChange,
+                    onAdd = cookbookViewModel::addFromUrl,
+                    onImport = { picker.launch(arrayOf("*/*")) },
+                    onDelete = cookbookViewModel::delete,
+                    onCancelDownload = cookbookViewModel::cancelDownload,
+                    onDismissError = cookbookViewModel::dismissError,
+                    onDismissNotice = cookbookViewModel::dismissNotice,
                 )
             }
             composable(Routes.GALLERY) {

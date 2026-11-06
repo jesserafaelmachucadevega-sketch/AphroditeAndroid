@@ -172,6 +172,35 @@ object AphroditeMigrations {
         }
     }
 
+    /** 6 → 7: on-device model files. */
+    val MIGRATION_6_7 = object : Migration(6, 7) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                "CREATE TABLE IF NOT EXISTS `local_models` (" +
+                    "`id` TEXT NOT NULL, " +
+                    "`name` TEXT NOT NULL, " +
+                    "`file_name` TEXT NOT NULL, " +
+                    "`path` TEXT NOT NULL, " +
+                    "`size_bytes` INTEGER NOT NULL, " +
+                    "`downloaded_bytes` INTEGER NOT NULL, " +
+                    "`status` TEXT NOT NULL, " +
+                    "`source_url` TEXT, " +
+                    "`quantization` TEXT, " +
+                    "`parameters_b` REAL, " +
+                    "`context_length` INTEGER, " +
+                    "`error` TEXT, " +
+                    "`created_at` INTEGER NOT NULL, " +
+                    "`updated_at` INTEGER NOT NULL, " +
+                    "PRIMARY KEY(`id`))",
+            )
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_local_models_status` ON `local_models` (`status`)")
+            db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_local_models_path` ON `local_models` (`path`)")
+        }
+    }
+
     val ALL: Array<Migration> =
-        arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
+        arrayOf(
+            MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4,
+            MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7,
+        )
 }
