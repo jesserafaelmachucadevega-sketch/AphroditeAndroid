@@ -24,6 +24,8 @@ import com.aphrodite.core.adaptive.LocalDeviceProfile
 import com.aphrodite.core.datastore.AppPreferences
 import com.aphrodite.designsystem.components.AphroditeTopBar
 import com.aphrodite.designsystem.theme.AphroditeThemes
+import com.aphrodite.feature.calendar.CalendarScreen
+import com.aphrodite.feature.calendar.CalendarViewModel
 import com.aphrodite.feature.notes.NotesScreen
 import com.aphrodite.feature.notes.NotesViewModel
 import com.aphrodite.feature.tasks.TasksScreen
@@ -46,6 +48,7 @@ fun AphroditeNavHost(
     settingsViewModel: SettingsViewModel = hiltViewModel(),
     notesViewModel: NotesViewModel = hiltViewModel(),
     tasksViewModel: TasksViewModel = hiltViewModel(),
+    calendarViewModel: CalendarViewModel = hiltViewModel(),
 ) {
     val preferences by viewModel.state.collectAsStateWithLifecycle()
     val chatState by chatViewModel.state.collectAsStateWithLifecycle()
@@ -54,6 +57,7 @@ fun AphroditeNavHost(
     val mcpState by settingsViewModel.mcpState.collectAsStateWithLifecycle()
     val notesState by notesViewModel.state.collectAsStateWithLifecycle()
     val tasksState by tasksViewModel.state.collectAsStateWithLifecycle()
+    val calendarState by calendarViewModel.state.collectAsStateWithLifecycle()
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route ?: Routes.SETTINGS
@@ -124,6 +128,21 @@ fun AphroditeNavHost(
                     onToggleModelPicker = chatViewModel::toggleModelPicker,
                     onModelQueryChange = chatViewModel::onModelQueryChange,
                     onSelectModel = chatViewModel::selectModel,
+                )
+            }
+            composable(Routes.CALENDAR) {
+                CalendarScreen(
+                    state = calendarState,
+                    onPreviousMonth = calendarViewModel::previousMonth,
+                    onNextMonth = calendarViewModel::nextMonth,
+                    onSelectDay = calendarViewModel::selectDay,
+                    onAdd = calendarViewModel::startAdd,
+                    onEdit = calendarViewModel::startEdit,
+                    onDelete = calendarViewModel::delete,
+                    onDraftChange = calendarViewModel::onDraftChange,
+                    onCancelEdit = calendarViewModel::cancelEdit,
+                    onSave = calendarViewModel::save,
+                    onDismissError = calendarViewModel::dismissError,
                 )
             }
             composable(Routes.TASKS) {
