@@ -7,13 +7,6 @@ import com.aphrodite.core.database.entity.TaskAction
 import com.aphrodite.core.database.entity.TaskEntity
 import com.aphrodite.core.database.entity.TaskRunEntity
 import com.aphrodite.core.database.entity.TaskTrigger
-import com.aphrodite.core.database.entity.ModelEndpointEntity
-import com.aphrodite.core.llm.EndpointRepository
-import com.aphrodite.core.llm.agent.AgentLoop
-import com.aphrodite.core.llm.model.LlmMessage
-import com.aphrodite.core.llm.model.LlmRequest
-import com.aphrodite.core.llm.model.LlmRole
-import com.aphrodite.core.llm.stream.LlmEvent
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -54,8 +47,8 @@ data class TasksUiState(
 @HiltViewModel
 class TasksViewModel @Inject constructor(
     private val taskDao: TaskDao,
-    private val endpoints: EndpointRepository,
-    private val agent: AgentLoop,
+    private val runner: TaskRunner,
+    private val scheduler: TaskScheduler,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(TasksUiState())
@@ -101,19 +94,14 @@ class TasksViewModel @Inject constructor(
         viewModelScope.launch {
             val now = System.currentTimeMillis()
             val existing = draft.id?.let { taskDao.getById(it) }
-            val triggerValue = when (draft.trigger) {
-                TaskTrigger.Interval -> draft.intervalMinutes.ifBlank { "60" }
-                else -> null
-            }
-            val nextRun = when (draft.trigger) {
-                TaskTrigger.Manual -> null
-                TaskTrigger.Interval -> now + (triggerValue?.toLongOrNull() ?: 60L) * 60_000L
-                else -> now + 60 * 60_000L
-            }
+            val interval = (draft.intervalMinutes.toLongOrNull() ?: 60L)
+                .coerceAtLeast(TaskScheduler.MIN_INTERVAL_MINUTES)
+            val triggerValue = if (draft.trigger == TaskTrigger.Interval) interval.toString() else null
+            val id = existing?.id ?: UUID.randomUUID().toString()
 
             taskDao.upsert(
                 TaskEntity(
-                    id = existing?.id ?: UUID.randomUUID().toString(),
+                    id = id,
                     name = draft.name.trim(),
                     description = draft.description.takeIf { it.isNotBlank() },
                     triggerKind = draft.trigger,
@@ -128,7 +116,7 @@ class TasksViewModel @Inject constructor(
                     notifyOn = existing?.notifyOn ?: "failure",
                     webhookToken = existing?.webhookToken,
                     lastRunAt = existing?.lastRunAt,
-                    nextRunAt = nextRun,
+                    nextRunAt = if (draft.trigger == TaskTrigger.Interval) now + interval * 60_000L else null,
                     runCount = existing?.runCount ?: 0,
                     failureCount = existing?.failureCount ?: 0,
                     createdAt = existing?.createdAt ?: now,
@@ -136,11 +124,14 @@ class TasksViewModel @Inject constructor(
                 ),
             )
             _state.update { it.copy(draft = null, notice = "Task saved.") }
+            // Enqueue or cancel the background schedule to match what was just saved.
+            scheduler.sync(id)
         }
     }
 
     fun delete(taskId: String) {
         viewModelScope.launch {
+            scheduler.sync(taskId)
             taskDao.deleteRuns(taskId)
             taskDao.delete(taskId)
             _state.update { it.copy(notice = "Task removed.") }
@@ -150,6 +141,7 @@ class TasksViewModel @Inject constructor(
     fun setEnabled(taskId: String, enabled: Boolean) {
         viewModelScope.launch {
             taskDao.setEnabled(taskId, enabled, System.currentTimeMillis())
+            scheduler.sync(taskId)
         }
     }
 
@@ -157,103 +149,20 @@ class TasksViewModel @Inject constructor(
     fun run(taskId: String) {
         if (_state.value.runningTaskId != null) return
         viewModelScope.launch {
-            val task = taskDao.getById(taskId) ?: return@launch
             _state.update { it.copy(runningTaskId = taskId, error = null, notice = null) }
-
-            val startedAt = System.currentTimeMillis()
-            val runId = UUID.randomUUID().toString()
-
-            val selection = resolveModel(task)
-            if (selection == null) {
-                finish(task, runId, startedAt, null, "No model is configured. Add a provider first.")
-                return@launch
+            val record = runCatching { runner.run(taskId) }.getOrNull()
+            _state.update {
+                it.copy(
+                    runningTaskId = null,
+                    notice = if (record?.status == "success") "Task finished." else null,
+                    error = if (record == null || record.status != "success") {
+                        record?.error ?: "The run failed."
+                    } else {
+                        null
+                    },
+                )
             }
-            val (resolved, model) = selection
-
-            val request = LlmRequest(
-                baseUrl = resolved.endpoint.baseUrl,
-                apiKey = resolved.apiKey,
-                model = model,
-                providerId = resolved.endpoint.kind.id,
-                messages = listOf(LlmMessage(role = LlmRole.User, content = task.payload)),
-            )
-
-            val output = StringBuilder()
-            var failure: String? = null
-            runCatching {
-                agent.run(request).collect { event ->
-                    when (event) {
-                        is LlmEvent.Delta -> output.append(event.text)
-                        is LlmEvent.FinalResponse -> {
-                            output.clear()
-                            output.append(event.content)
-                        }
-                        is LlmEvent.Failed -> failure = event.message
-                        else -> Unit
-                    }
-                }
-            }.onFailure { failure = it.message ?: "The run failed" }
-
-            finish(task, runId, startedAt, output.toString().ifBlank { null }, failure)
         }
-    }
-
-    private suspend fun finish(
-        task: TaskEntity,
-        runId: String,
-        startedAt: Long,
-        output: String?,
-        error: String?,
-    ) {
-        val finishedAt = System.currentTimeMillis()
-        taskDao.insertRun(
-            TaskRunEntity(
-                id = runId,
-                taskId = task.id,
-                status = if (error == null) "success" else "failed",
-                output = output,
-                error = error,
-                startedAt = startedAt,
-                finishedAt = finishedAt,
-                durationMs = finishedAt - startedAt,
-            ),
-        )
-        val now = System.currentTimeMillis()
-        taskDao.upsert(
-            task.copy(
-                lastRunAt = now,
-                runCount = task.runCount + 1,
-                failureCount = task.failureCount + if (error == null) 0 else 1,
-                nextRunAt = when (task.triggerKind) {
-                    TaskTrigger.Interval ->
-                        now + (task.triggerValue?.toLongOrNull() ?: 60L) * 60_000L
-                    TaskTrigger.Manual -> null
-                    else -> now + 60 * 60_000L
-                },
-                updatedAt = now,
-            ),
-        )
-        _state.update {
-            it.copy(
-                runningTaskId = null,
-                notice = if (error == null) "Task finished." else null,
-                error = error,
-            )
-        }
-    }
-
-    private suspend fun resolveModel(task: TaskEntity): Pair<com.aphrodite.core.llm.ResolvedEndpoint, String>? {
-        val endpointId = task.endpointId
-        if (endpointId != null) {
-            val resolved = endpoints.resolve(endpointId)
-            val model = task.model ?: endpoints.modelsFor(endpointId).firstOrNull()?.modelId
-            if (resolved != null && model != null) return resolved to model
-        }
-        val firstEndpoint: ModelEndpointEntity = endpoints.observeEnabledEndpoints().first().firstOrNull()
-            ?: return null
-        val model = endpoints.modelsFor(firstEndpoint.id).firstOrNull()?.modelId ?: return null
-        val resolved = endpoints.resolve(firstEndpoint.id) ?: return null
-        return resolved to model
     }
 
     fun dismiss() = _state.update { it.copy(error = null, notice = null) }

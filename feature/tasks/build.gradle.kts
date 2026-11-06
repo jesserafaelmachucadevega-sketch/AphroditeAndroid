@@ -17,4 +17,6 @@ dependencies {
     implementation(project(":core:database"))
     implementation(project(":core:llm"))
     implementation(project(":core:notifications"))
+
+    implementation(libs.androidx.work.runtime)
 }
