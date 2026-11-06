@@ -28,6 +28,8 @@ import com.aphrodite.feature.calendar.CalendarScreen
 import com.aphrodite.feature.calendar.CalendarViewModel
 import com.aphrodite.feature.contacts.ContactsScreen
 import com.aphrodite.feature.contacts.ContactsViewModel
+import com.aphrodite.feature.documents.DocumentsScreen
+import com.aphrodite.feature.documents.DocumentsViewModel
 import com.aphrodite.feature.email.EmailScreen
 import com.aphrodite.feature.email.EmailViewModel
 import com.aphrodite.feature.notes.NotesScreen
@@ -55,6 +57,7 @@ fun AphroditeNavHost(
     calendarViewModel: CalendarViewModel = hiltViewModel(),
     contactsViewModel: ContactsViewModel = hiltViewModel(),
     emailViewModel: EmailViewModel = hiltViewModel(),
+    documentsViewModel: DocumentsViewModel = hiltViewModel(),
 ) {
     val preferences by viewModel.state.collectAsStateWithLifecycle()
     val chatState by chatViewModel.state.collectAsStateWithLifecycle()
@@ -66,6 +69,7 @@ fun AphroditeNavHost(
     val calendarState by calendarViewModel.state.collectAsStateWithLifecycle()
     val contactsState by contactsViewModel.state.collectAsStateWithLifecycle()
     val emailState by emailViewModel.state.collectAsStateWithLifecycle()
+    val documentsState by documentsViewModel.state.collectAsStateWithLifecycle()
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route ?: Routes.SETTINGS
@@ -151,6 +155,18 @@ fun AphroditeNavHost(
                     onCancelEdit = calendarViewModel::cancelEdit,
                     onSave = calendarViewModel::save,
                     onDismissError = calendarViewModel::dismissError,
+                )
+            }
+            composable(Routes.DOCUMENTS) {
+                DocumentsScreen(
+                    state = documentsState,
+                    onAdd = documentsViewModel::startAdd,
+                    onDraftChange = documentsViewModel::onDraftChange,
+                    onCancelAdd = documentsViewModel::cancelAdd,
+                    onSave = documentsViewModel::save,
+                    onReindex = documentsViewModel::reindex,
+                    onDelete = documentsViewModel::delete,
+                    onDismiss = documentsViewModel::dismiss,
                 )
             }
             composable(Routes.EMAIL) {

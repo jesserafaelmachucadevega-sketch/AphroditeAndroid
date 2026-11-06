@@ -68,6 +68,12 @@ val aphroditeDestinations: List<AphroditeDestination> = listOf(
         section = Sections.TOOLS,
     ),
     AphroditeDestination(
+        route = Routes.DOCUMENTS,
+        label = "Documents",
+        icon = AphroditeIcons.Library,
+        section = Sections.TOOLS,
+    ),
+    AphroditeDestination(
         route = Routes.CONTACTS,
         label = "Contacts",
         icon = AphroditeIcons.Users,

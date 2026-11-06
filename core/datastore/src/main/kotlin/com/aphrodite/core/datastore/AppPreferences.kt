@@ -27,6 +27,14 @@ data class AppPreferences(
     val textScale: Float = 1f,
     /** Whether the animated background is drawn at all. */
     val showBackgroundPattern: Boolean = true,
+    /**
+     * Which embedding model document retrieval uses.
+     *
+     * Configurable because providers differ and several offer no /embeddings endpoint at all.
+     * Every document must be indexed with the same model: vectors from different models are not
+     * comparable, so changing this requires re-indexing.
+     */
+    val embeddingModel: String = "text-embedding-3-small",
 ) {
     /** True when backgrounds should animate: enabled here and not disabled by accessibility. */
     val animateBackgrounds: Boolean

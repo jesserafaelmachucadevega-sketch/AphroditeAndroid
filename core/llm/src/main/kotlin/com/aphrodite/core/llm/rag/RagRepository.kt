@@ -53,7 +53,11 @@ class RagRepository @Inject constructor(
     private val dao: DocumentDao,
     private val endpoints: EndpointRepository,
     private val client: com.aphrodite.core.network.HttpClientFactory,
+    private val preferences: com.aphrodite.core.datastore.PreferencesRepository,
 ) {
+    /** The configured embedding model; see the doc in PreferencesRepository for why it varies. */
+    private suspend fun embeddingModel(): String =
+        preferences.preferences.first().embeddingModel
     /** Chunks [body] and stores the document with its vectors. */
     suspend fun index(documentId: String): Result<Int> = withContext(Dispatchers.IO) {
         runCatching {
@@ -61,10 +65,11 @@ class RagRepository @Inject constructor(
             val endpoint = endpoints.observeEnabledEndpoints().first().firstOrNull()
                 ?: error("No provider is configured to embed with.")
             val key = apiKeyFor(endpoint)
+            val model = embeddingModel()
             val chunks = chunk(document.body)
             if (chunks.isEmpty()) error("The document has no text to index.")
 
-            val vectors = embed(chunks, endpoint.baseUrl, key, EMBEDDING_MODEL)
+            val vectors = embed(chunks, endpoint.baseUrl, key, model)
             if (vectors.size != chunks.size) error("The provider returned the wrong number of vectors.")
 
             val now = System.currentTimeMillis()
@@ -80,7 +85,7 @@ class RagRepository @Inject constructor(
                     )
                 },
             )
-            dao.recordIndex(documentId, now, chunks.size, EMBEDDING_MODEL, null)
+            dao.recordIndex(documentId, now, chunks.size, model, null)
             chunks.size
         }.onFailure { error ->
             dao.recordIndex(documentId, null, 0, null, error.message)
@@ -97,7 +102,7 @@ class RagRepository @Inject constructor(
                 val endpoint = endpoints.observeEnabledEndpoints().first().firstOrNull()
                     ?: error("No provider is configured to embed with.")
                 val key = apiKeyFor(endpoint)
-                val queryVector = embed(listOf(query), endpoint.baseUrl, key, EMBEDDING_MODEL).first()
+                val queryVector = embed(listOf(query), endpoint.baseUrl, key, embeddingModel()).first()
 
                 val titles = dao.all().associate { it.id to it.title }
                 chunks
@@ -221,8 +226,6 @@ class RagRepository @Inject constructor(
     }
 
     private companion object {
-        /** Any OpenAI-compatible embedding model. Configurable per provider is a later concern. */
-        const val EMBEDDING_MODEL = "text-embedding-3-small"
         val JSON = Json { ignoreUnknownKeys = true; isLenient = true }
     }
 }

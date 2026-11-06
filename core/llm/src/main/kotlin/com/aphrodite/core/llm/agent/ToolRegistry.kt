@@ -22,9 +22,11 @@ class ToolRegistry @Inject constructor(
     fetchUrl: FetchUrlTool,
     currentTime: CurrentTimeTool,
     calculate: CalculateTool,
+    searchDocuments: com.aphrodite.core.llm.tools.SearchDocumentsTool,
     private val mcp: com.aphrodite.core.llm.mcp.McpManager,
 ) {
-    private val builtIn: List<Tool> = listOf(webSearch, fetchUrl, currentTime, calculate)
+    private val builtIn: List<Tool> =
+        listOf(webSearch, fetchUrl, currentTime, calculate, searchDocuments)
 
     /**
      * Built-in tools plus everything currently exposed by connected MCP servers.

@@ -38,6 +38,7 @@ class PreferencesRepository @Inject constructor(
         val reduceMotion = booleanPreferencesKey("reduce_motion")
         val textScale = floatPreferencesKey("text_scale")
         val showBackgroundPattern = booleanPreferencesKey("show_background_pattern")
+        val embeddingModel = stringPreferencesKey("embedding_model")
     }
 
     val preferences: Flow<AppPreferences> = context.preferencesStore.data.map { prefs ->
@@ -55,6 +56,7 @@ class PreferencesRepository @Inject constructor(
             reduceMotion = prefs[Keys.reduceMotion] ?: false,
             textScale = prefs[Keys.textScale] ?: 1f,
             showBackgroundPattern = prefs[Keys.showBackgroundPattern] ?: true,
+            embeddingModel = prefs[Keys.embeddingModel] ?: "text-embedding-3-small",
         )
     }
 
@@ -86,6 +88,9 @@ class PreferencesRepository @Inject constructor(
     suspend fun setTextScale(scale: Float) = edit { it[Keys.textScale] = scale.coerceIn(0.75f, 2f) }
 
     suspend fun setShowBackgroundPattern(show: Boolean) = edit { it[Keys.showBackgroundPattern] = show }
+
+    suspend fun setEmbeddingModel(model: String) =
+        edit { it[Keys.embeddingModel] = model.trim() }
 
     /** Restores every shell preference to its default. */
     suspend fun resetToDefaults() = context.preferencesStore.edit { it.clear() }
