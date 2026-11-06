@@ -26,12 +26,13 @@ class ToolRegistry @Inject constructor(
     saveMemory: com.aphrodite.core.llm.tools.SaveMemoryTool,
     searchMemory: com.aphrodite.core.llm.tools.SearchMemoryTool,
     loadSkill: com.aphrodite.core.llm.tools.LoadSkillTool,
+    research: com.aphrodite.core.llm.tools.ResearchTool,
     private val mcp: com.aphrodite.core.llm.mcp.McpManager,
 ) {
     private val builtIn: List<Tool> =
         listOf(
             webSearch, fetchUrl, currentTime, calculate,
-            searchDocuments, saveMemory, searchMemory, loadSkill,
+            searchDocuments, saveMemory, searchMemory, loadSkill, research,
         )
 
     /**
