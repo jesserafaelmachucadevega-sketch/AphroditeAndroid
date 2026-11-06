@@ -35,6 +35,8 @@ import com.aphrodite.feature.email.EmailViewModel
 import com.aphrodite.feature.memory.MemoryScreen
 import com.aphrodite.feature.memory.MemoryViewModel
 import com.aphrodite.feature.notes.NotesScreen
+import com.aphrodite.feature.skills.SkillsScreen
+import com.aphrodite.feature.skills.SkillsViewModel
 import com.aphrodite.feature.notes.NotesViewModel
 import com.aphrodite.feature.tasks.TasksScreen
 import com.aphrodite.feature.tasks.TasksViewModel
@@ -61,6 +63,7 @@ fun AphroditeNavHost(
     emailViewModel: EmailViewModel = hiltViewModel(),
     documentsViewModel: DocumentsViewModel = hiltViewModel(),
     memoryViewModel: MemoryViewModel = hiltViewModel(),
+    skillsViewModel: SkillsViewModel = hiltViewModel(),
 ) {
     val preferences by viewModel.state.collectAsStateWithLifecycle()
     val chatState by chatViewModel.state.collectAsStateWithLifecycle()
@@ -74,6 +77,7 @@ fun AphroditeNavHost(
     val emailState by emailViewModel.state.collectAsStateWithLifecycle()
     val documentsState by documentsViewModel.state.collectAsStateWithLifecycle()
     val memoryState by memoryViewModel.state.collectAsStateWithLifecycle()
+    val skillsState by skillsViewModel.state.collectAsStateWithLifecycle()
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route ?: Routes.SETTINGS
@@ -159,6 +163,19 @@ fun AphroditeNavHost(
                     onCancelEdit = calendarViewModel::cancelEdit,
                     onSave = calendarViewModel::save,
                     onDismissError = calendarViewModel::dismissError,
+                )
+            }
+            composable(Routes.SKILLS) {
+                SkillsScreen(
+                    state = skillsState,
+                    onAdd = skillsViewModel::startAdd,
+                    onEdit = skillsViewModel::startEdit,
+                    onDraftChange = skillsViewModel::onDraftChange,
+                    onCancelEdit = skillsViewModel::cancelEdit,
+                    onSave = skillsViewModel::save,
+                    onToggleEnabled = skillsViewModel::toggleEnabled,
+                    onDelete = skillsViewModel::delete,
+                    onDismissError = skillsViewModel::dismissError,
                 )
             }
             composable(Routes.MEMORY) {

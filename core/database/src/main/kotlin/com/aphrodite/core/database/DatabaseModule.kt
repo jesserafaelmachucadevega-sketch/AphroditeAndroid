@@ -91,4 +91,8 @@ object DatabaseModule {
     @Provides
     fun provideMemoryDao(database: AphroditeDatabase): com.aphrodite.core.database.dao.MemoryDao =
         database.memoryDao()
+
+    @Provides
+    fun provideSkillDao(database: AphroditeDatabase): com.aphrodite.core.database.dao.SkillDao =
+        database.skillDao()
 }

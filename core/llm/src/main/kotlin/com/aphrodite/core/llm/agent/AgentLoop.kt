@@ -36,6 +36,7 @@ class AgentLoop @Inject constructor(
     private val client: LlmClient,
     private val registry: ToolRegistry,
     private val memories: com.aphrodite.core.database.dao.MemoryDao,
+    private val skills: com.aphrodite.core.database.dao.SkillDao,
 ) {
     fun run(
         request: LlmRequest,
@@ -52,6 +53,14 @@ class AgentLoop @Inject constructor(
                 append("\n\nWHAT YOU REMEMBER ABOUT THE USER\n")
                 append("These are facts from earlier conversations. Treat them as true.\n")
                 pinned.forEach { append("- [${it.category.label}] ${it.text}\n") }
+            }
+            // Names and descriptions only. The instructions themselves are a tool call away, so a
+            // large library of skills cannot crowd out the conversation.
+            val availableSkills = skills.enabled()
+            if (availableSkills.isNotEmpty()) {
+                append("\n\nAVAILABLE SKILLS\n")
+                append("Load one with load_skill before starting work it covers.\n")
+                availableSkills.forEach { append("- ${it.name}: ${it.description}\n") }
             }
         }
         val conversation = mutableListOf<LlmMessage>()

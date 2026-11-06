@@ -26,6 +26,7 @@ import com.aphrodite.core.database.entity.EmailAccountEntity
 import com.aphrodite.core.database.entity.DocumentChunkEntity
 import com.aphrodite.core.database.entity.DocumentEntity
 import com.aphrodite.core.database.entity.MemoryEntity
+import com.aphrodite.core.database.entity.SkillEntity
 import com.aphrodite.core.database.entity.ModelEndpointEntity
 import com.aphrodite.core.database.entity.ModelEntity
 import com.aphrodite.core.database.entity.McpServerEntity
@@ -69,8 +70,9 @@ import com.aphrodite.core.database.entity.UserProfileEntity
         DocumentEntity::class,
         DocumentChunkEntity::class,
         MemoryEntity::class,
+        SkillEntity::class,
     ],
-    version = 5,
+    version = 6,
     exportSchema = true,
 )
 @TypeConverters(DatabaseConverters::class)
@@ -90,6 +92,7 @@ abstract class AphroditeDatabase : RoomDatabase() {
     abstract fun emailDao(): com.aphrodite.core.database.dao.EmailDao
     abstract fun documentDao(): com.aphrodite.core.database.dao.DocumentDao
     abstract fun memoryDao(): com.aphrodite.core.database.dao.MemoryDao
+    abstract fun skillDao(): com.aphrodite.core.database.dao.SkillDao
 
     companion object {
         const val NAME = "aphrodite.db"
