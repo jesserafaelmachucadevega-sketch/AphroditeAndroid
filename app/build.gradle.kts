@@ -50,6 +50,8 @@ dependencies {
     implementation(project(":feature:memory"))
     implementation(project(":feature:skills"))
     implementation(project(":feature:search"))
+    implementation(project(":feature:speech"))
+    implementation(project(":core:voice"))
     implementation(project(":feature:settings"))
 
     implementation(platform(libs.compose.bom))

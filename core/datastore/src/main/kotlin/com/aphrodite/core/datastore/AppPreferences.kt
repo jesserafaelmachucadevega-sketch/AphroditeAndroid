@@ -35,6 +35,14 @@ data class AppPreferences(
      * comparable, so changing this requires re-indexing.
      */
     val embeddingModel: String = "text-embedding-3-small",
+    /** Read finished answers aloud as they arrive. */
+    val speakReplies: Boolean = false,
+    /** Platform voice name; null lets the engine pick, which is usually the right default. */
+    val speechVoice: String? = null,
+    val speechRate: Float = 1f,
+    val speechPitch: Float = 1f,
+    /** Language tag for dictation, so it does not silently follow the device. */
+    val dictationLanguage: String = "",
 ) {
     /** True when backgrounds should animate: enabled here and not disabled by accessibility. */
     val animateBackgrounds: Boolean

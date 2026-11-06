@@ -39,6 +39,11 @@ class PreferencesRepository @Inject constructor(
         val textScale = floatPreferencesKey("text_scale")
         val showBackgroundPattern = booleanPreferencesKey("show_background_pattern")
         val embeddingModel = stringPreferencesKey("embedding_model")
+        val speakReplies = booleanPreferencesKey("speak_replies")
+        val speechVoice = stringPreferencesKey("speech_voice")
+        val speechRate = floatPreferencesKey("speech_rate")
+        val speechPitch = floatPreferencesKey("speech_pitch")
+        val dictationLanguage = stringPreferencesKey("dictation_language")
     }
 
     val preferences: Flow<AppPreferences> = context.preferencesStore.data.map { prefs ->
@@ -57,6 +62,11 @@ class PreferencesRepository @Inject constructor(
             textScale = prefs[Keys.textScale] ?: 1f,
             showBackgroundPattern = prefs[Keys.showBackgroundPattern] ?: true,
             embeddingModel = prefs[Keys.embeddingModel] ?: "text-embedding-3-small",
+            speakReplies = prefs[Keys.speakReplies] ?: false,
+            speechVoice = prefs[Keys.speechVoice],
+            speechRate = prefs[Keys.speechRate] ?: 1f,
+            speechPitch = prefs[Keys.speechPitch] ?: 1f,
+            dictationLanguage = prefs[Keys.dictationLanguage].orEmpty(),
         )
     }
 
@@ -91,6 +101,18 @@ class PreferencesRepository @Inject constructor(
 
     suspend fun setEmbeddingModel(model: String) =
         edit { it[Keys.embeddingModel] = model.trim() }
+
+    suspend fun setSpeakReplies(enabled: Boolean) = edit { it[Keys.speakReplies] = enabled }
+
+    suspend fun setSpeechVoice(name: String?) = edit {
+        if (name == null) it.remove(Keys.speechVoice) else it[Keys.speechVoice] = name
+    }
+
+    suspend fun setSpeechRate(rate: Float) = edit { it[Keys.speechRate] = rate.coerceIn(0.25f, 3f) }
+
+    suspend fun setSpeechPitch(pitch: Float) = edit { it[Keys.speechPitch] = pitch.coerceIn(0.5f, 2f) }
+
+    suspend fun setDictationLanguage(tag: String) = edit { it[Keys.dictationLanguage] = tag }
 
     /** Restores every shell preference to its default. */
     suspend fun resetToDefaults() = context.preferencesStore.edit { it.clear() }

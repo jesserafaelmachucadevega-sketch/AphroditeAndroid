@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -84,6 +85,8 @@ data class ChatUiState(
 class ChatViewModel @Inject constructor(
     private val repository: ChatRepository,
     private val agent: com.aphrodite.core.llm.agent.AgentLoop,
+    private val speech: com.aphrodite.core.voice.TextToSpeechEngine,
+    private val preferences: com.aphrodite.core.datastore.PreferencesRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(ChatUiState())
@@ -310,6 +313,7 @@ class ChatViewModel @Inject constructor(
                         thinking = combinedThinking.ifBlank { null },
                         model = request.model,
                     )
+                    speakIfEnabled(parsed.visible)
                 }
                 failure != null -> {
                     _state.update { it.copy(error = failure) }
@@ -318,6 +322,22 @@ class ChatViewModel @Inject constructor(
             }
 
             _state.update { it.copy(isStreaming = false, streamingText = "", streamingThinking = "") }
+        }
+    }
+
+    /**
+     * Reads a finished answer aloud when the user has asked for it.
+     *
+     * Settings are re-read per answer rather than cached, so changing the voice or rate in the
+     * speech screen applies to the next answer without restarting anything.
+     */
+    private fun speakIfEnabled(markdown: String) {
+        viewModelScope.launch {
+            val saved = preferences.preferences.first()
+            if (!saved.speakReplies) return@launch
+            speech.selectVoice(saved.speechVoice)
+            speech.configure(saved.speechRate, saved.speechPitch)
+            speech.speak(com.aphrodite.core.voice.SpeechText.forReading(markdown))
         }
     }
 

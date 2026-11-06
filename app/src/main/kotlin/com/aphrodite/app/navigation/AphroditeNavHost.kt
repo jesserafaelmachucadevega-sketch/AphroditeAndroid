@@ -38,6 +38,8 @@ import com.aphrodite.feature.notes.NotesScreen
 import com.aphrodite.feature.search.SearchScreen
 import com.aphrodite.feature.search.SearchViewModel
 import com.aphrodite.feature.skills.SkillsScreen
+import com.aphrodite.feature.speech.SpeechScreen
+import com.aphrodite.feature.speech.SpeechViewModel
 import com.aphrodite.feature.skills.SkillsViewModel
 import com.aphrodite.feature.notes.NotesViewModel
 import com.aphrodite.feature.tasks.TasksScreen
@@ -67,6 +69,7 @@ fun AphroditeNavHost(
     memoryViewModel: MemoryViewModel = hiltViewModel(),
     skillsViewModel: SkillsViewModel = hiltViewModel(),
     searchViewModel: SearchViewModel = hiltViewModel(),
+    speechViewModel: SpeechViewModel = hiltViewModel(),
 ) {
     val preferences by viewModel.state.collectAsStateWithLifecycle()
     val chatState by chatViewModel.state.collectAsStateWithLifecycle()
@@ -82,6 +85,7 @@ fun AphroditeNavHost(
     val memoryState by memoryViewModel.state.collectAsStateWithLifecycle()
     val skillsState by skillsViewModel.state.collectAsStateWithLifecycle()
     val searchState by searchViewModel.state.collectAsStateWithLifecycle()
+    val speechState by speechViewModel.state.collectAsStateWithLifecycle()
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route ?: Routes.SETTINGS
@@ -167,6 +171,19 @@ fun AphroditeNavHost(
                     onCancelEdit = calendarViewModel::cancelEdit,
                     onSave = calendarViewModel::save,
                     onDismissError = calendarViewModel::dismissError,
+                )
+            }
+            composable(Routes.SPEECH) {
+                SpeechScreen(
+                    state = speechState,
+                    onSpeakRepliesChange = speechViewModel::onSpeakRepliesChange,
+                    onVoiceSelected = speechViewModel::onVoiceSelected,
+                    onRateChange = speechViewModel::onRateChange,
+                    onPitchChange = speechViewModel::onPitchChange,
+                    onPreview = speechViewModel::preview,
+                    onStopSpeaking = speechViewModel::stopSpeaking,
+                    onToggleDictation = speechViewModel::toggleDictation,
+                    onDismissError = speechViewModel::dismissError,
                 )
             }
             composable(Routes.SEARCH) {

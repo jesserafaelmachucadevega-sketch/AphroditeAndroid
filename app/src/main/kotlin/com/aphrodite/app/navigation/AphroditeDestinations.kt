@@ -26,6 +26,7 @@ object Routes {
     const val COMPARE = "compare"
     const val COOKBOOK = "cookbook"
     const val SEARCH = "search"
+    const val SPEECH = "speech"
     const val TOOLS = "tools"
     const val THEMES = "themes"
     const val SETTINGS = "settings"
@@ -66,6 +67,12 @@ val aphroditeDestinations: List<AphroditeDestination> = listOf(
         label = "Calendar",
         icon = AphroditeIcons.Calendar,
         section = Sections.TOOLS,
+    ),
+    AphroditeDestination(
+        route = Routes.SPEECH,
+        label = "Speech",
+        icon = AphroditeIcons.Volume,
+        section = Sections.SYSTEM,
     ),
     AphroditeDestination(
         route = Routes.SEARCH,

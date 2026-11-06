@@ -16,6 +16,8 @@ dependencies {
     implementation(project(":core:adaptive"))
     implementation(project(":core:database"))
     implementation(project(":core:llm"))
+    implementation(project(":core:datastore"))
+    implementation(project(":core:voice"))
     implementation(project(":core:markdown"))
     implementation(project(":core:media"))
     implementation(project(":core:speech"))
