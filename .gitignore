@@ -21,3 +21,6 @@ local.properties
 
 # Editor/agent session state, not project source.
 /.commandcode/
+
+# Vendored native source, fetched by scripts/fetch-llama.sh
+inference/llama/src/main/cpp/llama.cpp/

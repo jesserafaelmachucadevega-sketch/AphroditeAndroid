@@ -6,11 +6,34 @@ android {
     buildFeatures {
         buildConfig = false
     }
-}
 
-// The CMake/NDK build for the on-device inference engine (llama.cpp) is wired up in the
-// Cookbook phase, where the vendored sources and JNI bridge land.
+    ndkVersion = "27.2.12479018"
 
-dependencies {
-    api(project(":core:common"))
+    defaultConfig {
+        externalNativeBuild {
+            cmake {
+                arguments += listOf("-DANDROID_STL=c++_shared")
+            }
+        }
+        ndk {
+            // arm64 only. Every modern device is arm64, and each additional ABI roughly doubles
+            // native build time and adds a full copy of the libraries to the APK.
+            abiFilters += "arm64-v8a"
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            path = file("src/main/cpp/CMakeLists.txt")
+            version = "3.22.1"
+        }
+    }
+
+    buildTypes {
+        release {
+            ndk {
+                debugSymbolLevel = "none"
+            }
+        }
+    }
 }
