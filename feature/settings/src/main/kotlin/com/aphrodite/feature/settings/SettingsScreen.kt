@@ -41,6 +41,7 @@ enum class SettingsCategory(
 ) {
     Services("services", "Providers", AphroditeIcons.Server, "Models"),
     Presets("presets", "Presets", AphroditeIcons.Skills, "Models"),
+    Mcp("mcp", "MCP", AphroditeIcons.Server, "Models"),
     Appearance("appearance", "Appearance", AphroditeIcons.Palette, "Interface"),
     About("about", "About", AphroditeIcons.Info, "System"),
 }
@@ -75,6 +76,8 @@ fun SettingsScreen(
     servicesHandlers: ServicesHandlers? = null,
     presetsState: PresetsState = PresetsState(),
     presetsHandlers: PresetsHandlers? = null,
+    mcpState: McpState = McpState(),
+    mcpHandlers: McpHandlers? = null,
 ) {
     val profile = com.aphrodite.core.adaptive.LocalDeviceProfile.current
     val twoPane = profile.supportsTwoPanes
@@ -95,7 +98,7 @@ fun SettingsScreen(
                     .background(aphroditeColors.border),
             )
             Box(modifier = Modifier.weight(1f)) {
-                SettingsPanel(selected, state, handlers, themes, buildInfo, servicesState, servicesHandlers, presetsState, presetsHandlers)
+                SettingsPanel(selected, state, handlers, themes, buildInfo, servicesState, servicesHandlers, presetsState, presetsHandlers, mcpState, mcpHandlers)
             }
         }
     } else {
@@ -109,6 +112,8 @@ fun SettingsScreen(
             servicesHandlers = servicesHandlers,
             presetsState = presetsState,
             presetsHandlers = presetsHandlers,
+            mcpState = mcpState,
+            mcpHandlers = mcpHandlers,
             showCategoryPicker = true,
             onSelect = onSelect,
         )
@@ -162,6 +167,8 @@ private fun SettingsPanel(
     servicesHandlers: ServicesHandlers?,
     presetsState: PresetsState,
     presetsHandlers: PresetsHandlers?,
+    mcpState: McpState,
+    mcpHandlers: McpHandlers?,
     showCategoryPicker: Boolean = false,
     onSelect: (SettingsCategory) -> Unit = {},
 ) {
@@ -196,6 +203,17 @@ private fun SettingsPanel(
                         AphroditeEmptyState(
                             title = "Providers unavailable",
                             description = "The model layer did not initialise.",
+                            icon = AphroditeIcons.Server,
+                        )
+                    }
+
+                SettingsCategory.Mcp ->
+                    if (mcpHandlers != null) {
+                        McpSettingsPanel(state = mcpState, handlers = mcpHandlers)
+                    } else {
+                        AphroditeEmptyState(
+                            title = "MCP unavailable",
+                            description = "The MCP manager did not initialise.",
                             icon = AphroditeIcons.Server,
                         )
                     }

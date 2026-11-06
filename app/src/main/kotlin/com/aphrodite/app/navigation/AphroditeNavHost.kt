@@ -51,6 +51,7 @@ fun AphroditeNavHost(
     val chatState by chatViewModel.state.collectAsStateWithLifecycle()
     val servicesState by settingsViewModel.services.collectAsStateWithLifecycle()
     val presetsState by settingsViewModel.presets.collectAsStateWithLifecycle()
+    val mcpState by settingsViewModel.mcpState.collectAsStateWithLifecycle()
     val notesState by notesViewModel.state.collectAsStateWithLifecycle()
     val tasksState by tasksViewModel.state.collectAsStateWithLifecycle()
     val navController = rememberNavController()
@@ -175,6 +176,8 @@ fun AphroditeNavHost(
                     servicesHandlers = settingsViewModel.toServicesHandlers(),
                     presetsState = presetsState,
                     presetsHandlers = settingsViewModel.toPresetsHandlers(),
+                    mcpState = mcpState,
+                    mcpHandlers = settingsViewModel.toMcpHandlers(),
                 )
             }
         }
@@ -206,6 +209,19 @@ private fun SettingsViewModel.toPresetsHandlers(): com.aphrodite.feature.setting
         onCancel = ::cancelPresetEdit,
         onSave = ::savePreset,
         onDelete = ::deletePreset,
+    )
+
+/** Wires the MCP panel's callbacks to its view model. */
+private fun SettingsViewModel.toMcpHandlers(): com.aphrodite.feature.settings.McpHandlers =
+    com.aphrodite.feature.settings.McpHandlers(
+        onAdd = ::startAddMcpServer,
+        onChange = ::onMcpDraftChange,
+        onCancel = ::cancelMcpEdit,
+        onSave = ::saveMcpServer,
+        onDelete = ::deleteMcpServer,
+        onToggle = ::toggleMcpServer,
+        onRefresh = ::refreshMcpServer,
+        onToggleExpanded = ::toggleMcpExpanded,
     )
 
 private fun titleFor(route: String): String = when (route) {

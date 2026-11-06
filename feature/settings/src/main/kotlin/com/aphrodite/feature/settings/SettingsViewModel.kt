@@ -18,6 +18,7 @@ import javax.inject.Inject
 class SettingsViewModel @Inject constructor(
     private val endpoints: EndpointRepository,
     private val presetDao: com.aphrodite.core.database.dao.PresetDao,
+    private val mcp: com.aphrodite.core.llm.mcp.McpManager,
 ) : ViewModel() {
 
     private val _services = MutableStateFlow(ServicesState())
@@ -26,9 +27,21 @@ class SettingsViewModel @Inject constructor(
     private val _presets = MutableStateFlow(PresetsState())
     val presets: StateFlow<PresetsState> = _presets.asStateFlow()
 
+    private val _mcpState = MutableStateFlow(McpState())
+    val mcpState: StateFlow<McpState> = _mcpState.asStateFlow()
+
     private var selectedEndpointId: String? = null
 
     init {
+        viewModelScope.launch {
+            mcp.observeServers().collect { servers -> _mcpState.update { it.copy(servers = servers) } }
+        }
+        viewModelScope.launch {
+            mcp.observeAllTools().collect { tools -> _mcpState.update { it.copy(tools = tools) } }
+        }
+        viewModelScope.launch {
+            mcp.status.collect { status -> _mcpState.update { it.copy(status = status) } }
+        }
         viewModelScope.launch {
             presetDao.observeAll().collect { list ->
                 _presets.update { it.copy(presets = list) }
@@ -234,6 +247,46 @@ class SettingsViewModel @Inject constructor(
             presetDao.deleteCustom(id)
             _presets.update { it.copy(notice = "Preset removed.") }
         }
+    }
+
+    // ── MCP ──────────────────────────────────────────────────────────────────
+
+    fun startAddMcpServer() = _mcpState.update { it.copy(draft = McpDraft()) }
+
+    fun onMcpDraftChange(draft: McpDraft) = _mcpState.update { it.copy(draft = draft) }
+
+    fun cancelMcpEdit() = _mcpState.update { it.copy(draft = null) }
+
+    fun saveMcpServer() {
+        val draft = _mcpState.value.draft ?: return
+        if (draft.name.isBlank() || draft.url.isBlank()) return
+        viewModelScope.launch {
+            val id = mcp.addServer(
+                name = draft.name,
+                transport = draft.transport,
+                url = draft.url,
+                bearerToken = draft.token.ifBlank { null },
+            )
+            _mcpState.update { it.copy(draft = null) }
+            // Connect straight away so the result is visible rather than a pending list entry.
+            mcp.refresh(id)
+        }
+    }
+
+    fun deleteMcpServer(id: String) {
+        viewModelScope.launch { mcp.deleteServer(id) }
+    }
+
+    fun toggleMcpServer(id: String, enabled: Boolean) {
+        viewModelScope.launch { mcp.setEnabled(id, enabled) }
+    }
+
+    fun refreshMcpServer(id: String) {
+        viewModelScope.launch { mcp.refresh(id) }
+    }
+
+    fun toggleMcpExpanded(id: String) = _mcpState.update { state ->
+        state.copy(expanded = if (id in state.expanded) state.expanded - id else state.expanded + id)
     }
 
     fun dismissMessages() = _services.update { it.copy(message = null, error = null) }

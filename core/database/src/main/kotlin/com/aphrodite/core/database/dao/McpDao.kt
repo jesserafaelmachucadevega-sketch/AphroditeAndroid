@@ -38,6 +38,10 @@ interface McpDao {
     @Query("SELECT * FROM mcp_tools WHERE server_id = :serverId ORDER BY name ASC")
     fun observeTools(serverId: String): Flow<List<McpToolEntity>>
 
+    /** Every discovered tool, for the settings list. */
+    @Query("SELECT * FROM mcp_tools ORDER BY server_id ASC, name ASC")
+    fun observeAllTools(): Flow<List<McpToolEntity>>
+
     @Query("SELECT * FROM mcp_tools WHERE enabled = 1")
     suspend fun enabledTools(): List<McpToolEntity>
 

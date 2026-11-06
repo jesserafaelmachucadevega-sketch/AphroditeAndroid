@@ -47,6 +47,9 @@ class McpManager @Inject constructor(
 
     fun observeTools(serverId: String): Flow<List<McpToolEntity>> = dao.observeTools(serverId)
 
+    /** Every discovered tool across all servers, for the settings list. */
+    fun observeAllTools(): Flow<List<McpToolEntity>> = dao.observeAllTools()
+
     suspend fun addServer(
         name: String,
         transport: McpTransport,
